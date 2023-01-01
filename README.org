@@ -1,0 +1,3 @@
+Rust implementation of the lox language from [[https://craftinginterpreters.com/][Crafting Interpreters]]. ~jlox~
+contains the tree-walking interpreter from Part II. ~clox~ will eventually contain
+the bytecode interpreter from Part III.
