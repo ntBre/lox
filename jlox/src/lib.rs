@@ -9,6 +9,7 @@ use scanner::Scanner;
 mod scanner;
 mod token;
 mod token_type;
+mod expr;
 
 type RunRes = Result<(), Box<dyn Error>>;
 

@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use lazy_static::lazy_static;
 
+use crate::expr::Expr;
 use crate::token::{Literal, Token};
 use crate::token_type::TokenType;
 use crate::Lox;
@@ -77,6 +78,17 @@ impl<'a> Scanner<'a> {
             Literal::Null,
             self.line,
         ));
+
+        let expr = Expr::binary(
+            Expr::unary(
+                Token::new(TokenType::Minus, "-".to_owned(), Literal::Null, 1),
+                Expr::Literal(Literal::Number(123.0)),
+            ),
+            Token::new(TokenType::Star, "*".to_owned(), Literal::Null, 1),
+            Expr::grouping(Expr::literal(Literal::Number(45.67))),
+        );
+
+	println!("{}", expr);
 
         // unclear if we need self.tokens after this. if so, derive Clone and
         // clone it. actually, it's not clear that tokens needs to be a field on
