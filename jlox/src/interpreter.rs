@@ -194,6 +194,16 @@ impl Expr {
             }
             Expr::Null => unreachable!(),
             Expr::Variable { name } => env.get(name),
+            Expr::Assign { name, value } => {
+                let value = value.evaluate(env)?;
+		// NOTE this is a little different from the Java version because
+		// I've made `assign` clone and return the value again instead
+		// of cloning here and then returning value. I don't think it
+		// will make much difference overall, and it means I can return
+		// Result<Value, RuntimeError> from assign instead of Result<(),
+		// RuntimeError> and process that here
+                env.assign(name, value)
+            }
         }
     }
 }

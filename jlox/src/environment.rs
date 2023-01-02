@@ -30,6 +30,22 @@ impl Environment {
             )),
         }
     }
+
+    pub(crate) fn assign(
+        &mut self,
+        name: Token,
+        value: Value,
+    ) -> Result<Value, RuntimeError> {
+        if self.values.contains_key(&name.lexeme) {
+            self.define(name.lexeme, value.clone());
+            Ok(value)
+        } else {
+            Err(RuntimeError::new(
+                format!("Undefined variable '{}'.", name.lexeme),
+                name,
+            ))
+        }
+    }
 }
 
 impl Default for Environment {
