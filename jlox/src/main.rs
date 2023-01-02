@@ -11,7 +11,7 @@ fn main() {
             println!("Usage: jlox [script]");
             std::process::exit(64);
         }
-        Ordering::Equal => lox.run_file(&args[0]).unwrap(),
+        Ordering::Equal => lox.run_file(&args[1]).unwrap(),
         Ordering::Less => lox.run_prompt().unwrap(),
     }
 }
