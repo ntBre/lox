@@ -2,6 +2,7 @@ use std::fmt::Display;
 
 use crate::{
     expr::Expr,
+    stmt::Stmt,
     token::{Literal, Token},
     token_type::TokenType,
 };
@@ -78,6 +79,19 @@ impl RuntimeError {
 
     pub(crate) fn line(&self) -> &Token {
         &(self.token)
+    }
+}
+
+impl Stmt {
+    pub(crate) fn execute(self) -> Result<Value, RuntimeError> {
+        match self {
+            Stmt::Expression(e) => e.evaluate(),
+            Stmt::Print(e) => {
+                let value = e.evaluate()?;
+                println!("{}", value);
+                Ok(value)
+            }
+        }
     }
 }
 

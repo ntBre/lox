@@ -17,6 +17,7 @@ pub(crate) enum Expr {
         operator: Token,
         right: Box<Expr>,
     },
+    #[allow(unused)]
     Null,
 }
 

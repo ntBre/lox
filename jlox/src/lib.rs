@@ -4,16 +4,17 @@ use std::{
     io::{stdout, BufRead, BufReader, Write},
 };
 
-use expr::Expr;
 use interpreter::RuntimeError;
 use parser::Parser;
 use scanner::Scanner;
+use stmt::Stmt;
 use token::Token;
 
 mod expr;
 mod interpreter;
 mod parser;
 mod scanner;
+mod stmt;
 mod token;
 mod token_type;
 
@@ -36,10 +37,11 @@ impl Lox {
     /// NOTE defining this on self instead of defining a weird, empty
     /// Interpreter struct. I think the Java version needs that because of the
     /// Visitor pattern.
-    fn interpret(&mut self, expr: Expr) {
-        match expr.evaluate() {
-            Ok(value) => println!("{value}"),
-            Err(e) => self.runtime_error(e),
+    fn interpret(&mut self, statements: Vec<Stmt>) {
+        for statement in statements {
+            if let Err(e) = statement.execute() {
+                self.runtime_error(e);
+            }
         }
     }
 
@@ -48,9 +50,9 @@ impl Lox {
         if self.had_error {
             std::process::exit(65);
         }
-	if self.had_runtime_error {
+        if self.had_runtime_error {
             std::process::exit(70);
-	}
+        }
         Ok(())
     }
 
@@ -77,13 +79,13 @@ impl Lox {
         let mut scanner = Scanner::new(s.to_owned(), self);
         let tokens = scanner.scan_tokens();
         let mut parser = Parser::new(tokens, self);
-        let expression = parser.parse();
+        let statements = parser.parse();
 
         if self.had_error {
             return;
         }
 
-	self.interpret(expression);
+        self.interpret(statements);
     }
 
     fn error(&mut self, line: usize, message: &str) {

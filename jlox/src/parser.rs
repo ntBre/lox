@@ -1,10 +1,12 @@
 use crate::{
     expr::Expr,
+    stmt::Stmt,
     token::{Literal, Token},
     token_type::TokenType,
     Lox,
 };
 
+#[derive(Debug)]
 struct ParseError;
 
 pub(crate) struct Parser<'a> {
@@ -22,11 +24,35 @@ impl<'a> Parser<'a> {
         }
     }
 
-    pub(crate) fn parse(&mut self) -> Expr {
-        match self.expression() {
-            Ok(e) => e,
-            Err(_) => Expr::Null,
+    pub(crate) fn parse(&mut self) -> Vec<Stmt> {
+        let mut statements = Vec::new();
+        while !self.at_end() {
+            match self.statement() {
+                Ok(s) => statements.push(s),
+                Err(_) => {},
+            }
         }
+        statements
+    }
+
+    fn statement(&mut self) -> Result<Stmt, ParseError> {
+        if self.matches(&[TokenType::Print]) {
+            self.print_statement()
+        } else {
+            self.expression_statement()
+        }
+    }
+
+    fn print_statement(&mut self) -> Result<Stmt, ParseError> {
+        let value = self.expression()?;
+        self.consume(TokenType::Semicolon, "Expect ';' after value.")?;
+        Ok(Stmt::Print(value))
+    }
+
+    fn expression_statement(&mut self) -> Result<Stmt, ParseError> {
+        let value = self.expression()?;
+        self.consume(TokenType::Semicolon, "Expect ';' after value.")?;
+        Ok(Stmt::Expression(value))
     }
 
     /// expression → equality
