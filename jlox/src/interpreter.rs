@@ -1,13 +1,14 @@
 use std::fmt::Display;
 
 use crate::{
+    environment::Environment,
     expr::Expr,
     stmt::Stmt,
     token::{Literal, Token},
     token_type::TokenType,
 };
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub(crate) enum Value {
     Nil,
     Boolean(bool),
@@ -83,13 +84,25 @@ impl RuntimeError {
 }
 
 impl Stmt {
-    pub(crate) fn execute(self) -> Result<Value, RuntimeError> {
+    pub(crate) fn execute(
+        self,
+        env: &mut Environment,
+    ) -> Result<Value, RuntimeError> {
         match self {
-            Stmt::Expression(e) => e.evaluate(),
-            Stmt::Print(e) => {
-                let value = e.evaluate()?;
+            Stmt::Expression { expression: e } => e.evaluate(env),
+            Stmt::Print { expression: e } => {
+                let value = e.evaluate(env)?;
                 println!("{}", value);
                 Ok(value)
+            }
+            Stmt::Var { name, initializer } => {
+                let value = if !initializer.is_null() {
+                    initializer.evaluate(env)?
+                } else {
+                    Value::Nil
+                };
+                env.define(name.lexeme, value);
+                Ok(Value::Nil)
             }
         }
     }
@@ -97,15 +110,18 @@ impl Stmt {
 
 impl Expr {
     /// consume the expression in `self` and evaluate it to a [Value]
-    pub(crate) fn evaluate(self) -> Result<Value, RuntimeError> {
+    pub(crate) fn evaluate(
+        self,
+        env: &mut Environment,
+    ) -> Result<Value, RuntimeError> {
         match self {
             Expr::Binary {
                 left,
                 operator,
                 right,
             } => {
-                let left = left.evaluate()?;
-                let right = right.evaluate()?;
+                let left = left.evaluate(env)?;
+                let right = right.evaluate(env)?;
 
                 match operator.typ {
                     TokenType::Minus => {
@@ -157,7 +173,7 @@ impl Expr {
                     _ => unreachable!(),
                 }
             }
-            Expr::Grouping { expression } => expression.evaluate(),
+            Expr::Grouping { expression } => expression.evaluate(env),
             Expr::Literal(l) => match l {
                 Literal::String(s) => Ok(Value::String(s)),
                 Literal::Number(n) => Ok(Value::Number(n)),
@@ -166,7 +182,7 @@ impl Expr {
                 Literal::Null => Ok(Value::Nil),
             },
             Expr::Unary { operator, right } => {
-                let right = right.evaluate()?;
+                let right = right.evaluate(env)?;
                 match operator.typ {
                     TokenType::Minus => {
                         with_numbers!(operator, right => n);
@@ -177,6 +193,7 @@ impl Expr {
                 }
             }
             Expr::Null => unreachable!(),
+            Expr::Variable { name } => env.get(name),
         }
     }
 }

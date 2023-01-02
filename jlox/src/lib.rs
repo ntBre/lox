@@ -4,12 +4,14 @@ use std::{
     io::{stdout, BufRead, BufReader, Write},
 };
 
+use environment::Environment;
 use interpreter::RuntimeError;
 use parser::Parser;
 use scanner::Scanner;
 use stmt::Stmt;
 use token::Token;
 
+mod environment;
 mod expr;
 mod interpreter;
 mod parser;
@@ -24,6 +26,7 @@ type RunRes = Result<(), Box<dyn Error>>;
 pub struct Lox {
     had_error: bool,
     had_runtime_error: bool,
+    environment: Environment,
 }
 
 impl Lox {
@@ -31,15 +34,18 @@ impl Lox {
         Self {
             had_error: false,
             had_runtime_error: false,
+            environment: Environment::new(),
         }
     }
 
-    /// NOTE defining this on self instead of defining a weird, empty
+    /// NOTE defining this and the `environment` on self instead of defining an
     /// Interpreter struct. I think the Java version needs that because of the
-    /// Visitor pattern.
+    /// Visitor pattern and I can't see how to make it work with Rust lifetimes
+    /// because the Interpreter needs a mutable reference to Lox itself for
+    /// errors
     fn interpret(&mut self, statements: Vec<Stmt>) {
         for statement in statements {
-            if let Err(e) = statement.execute() {
+            if let Err(e) = statement.execute(&mut self.environment) {
                 self.runtime_error(e);
             }
         }

@@ -27,12 +27,38 @@ impl<'a> Parser<'a> {
     pub(crate) fn parse(&mut self) -> Vec<Stmt> {
         let mut statements = Vec::new();
         while !self.at_end() {
-            match self.statement() {
-                Ok(s) => statements.push(s),
-                Err(_) => {},
+            if let Ok(s) = self.declaration() {
+                statements.push(s)
             }
+            // the error has already been reported, so skip the err case
         }
         statements
+    }
+
+    fn declaration(&mut self) -> Result<Stmt, ParseError> {
+        let r = if self.matches(&[TokenType::Var]) {
+            self.var_declaration()
+        } else {
+            self.statement()
+        };
+        if r.is_err() {
+            self.synchronize();
+        }
+        r
+    }
+
+    fn var_declaration(&mut self) -> Result<Stmt, ParseError> {
+        let name =
+            self.consume(TokenType::Identifier, "Expect variable name.")?;
+        let mut initializer = Expr::Null;
+        if self.matches(&[TokenType::Equal]) {
+            initializer = self.expression()?;
+        }
+        self.consume(
+            TokenType::Semicolon,
+            "Expect ';' after variable declaration.",
+        )?;
+        Ok(Stmt::var(name, initializer))
     }
 
     fn statement(&mut self) -> Result<Stmt, ParseError> {
@@ -46,13 +72,13 @@ impl<'a> Parser<'a> {
     fn print_statement(&mut self) -> Result<Stmt, ParseError> {
         let value = self.expression()?;
         self.consume(TokenType::Semicolon, "Expect ';' after value.")?;
-        Ok(Stmt::Print(value))
+        Ok(Stmt::Print { expression: value })
     }
 
     fn expression_statement(&mut self) -> Result<Stmt, ParseError> {
         let value = self.expression()?;
         self.consume(TokenType::Semicolon, "Expect ';' after value.")?;
-        Ok(Stmt::Expression(value))
+        Ok(Stmt::Expression { expression: value })
     }
 
     /// expression → equality
@@ -136,6 +162,10 @@ impl<'a> Parser<'a> {
 
         if self.matches(&[TokenType::Number, TokenType::String]) {
             return Ok(Expr::literal(self.previous().literal));
+        }
+
+        if self.matches(&[TokenType::Identifier]) {
+            return Ok(Expr::variable(self.previous()));
         }
 
         if self.matches(&[TokenType::LeftParen]) {

@@ -4,6 +4,7 @@ use crate::token::{Literal, Token};
 
 #[derive(Debug)]
 pub(crate) enum Expr {
+    Null,
     Binary {
         left: Box<Expr>,
         operator: Token,
@@ -12,13 +13,14 @@ pub(crate) enum Expr {
     Grouping {
         expression: Box<Expr>,
     },
-    Literal(Literal),
     Unary {
         operator: Token,
         right: Box<Expr>,
     },
-    #[allow(unused)]
-    Null,
+    Literal(Literal),
+    Variable {
+        name: Token,
+    },
 }
 
 impl Expr {
@@ -46,6 +48,18 @@ impl Expr {
             right: Box::new(right),
         }
     }
+
+    pub(crate) fn variable(name: Token) -> Self {
+	Self::Variable { name }
+    }
+
+    /// Returns `true` if the expr is [`Null`].
+    ///
+    /// [`Null`]: Expr::Null
+    #[must_use]
+    pub(crate) fn is_null(&self) -> bool {
+        matches!(self, Self::Null)
+    }
 }
 
 impl Display for Expr {
@@ -62,6 +76,7 @@ impl Display for Expr {
                 write!(f, "({} {})", operator.lexeme, right)
             }
             Expr::Null => write!(f, "nil"),
+            Expr::Variable { name } => write!(f, "{name}"),
         }
     }
 }
