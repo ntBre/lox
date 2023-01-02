@@ -1,4 +1,4 @@
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub(crate) enum TokenType {
     // Single-character tokens
     LeftParen,
@@ -44,4 +44,14 @@ pub(crate) enum TokenType {
     While,
     //
     Eof,
+}
+
+impl TokenType {
+    /// Returns `true` if the token type is [`Eof`].
+    ///
+    /// [`Eof`]: TokenType::Eof
+    #[must_use]
+    pub(crate) fn is_eof(&self) -> bool {
+        matches!(self, Self::Eof)
+    }
 }

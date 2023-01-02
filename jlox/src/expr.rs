@@ -16,6 +16,7 @@ pub(crate) enum Expr {
         operator: Token,
         right: Box<Expr>,
     },
+    Null,
 }
 
 impl Expr {
@@ -58,6 +59,7 @@ impl Display for Expr {
             Expr::Unary { operator, right } => {
                 write!(f, "({} {})", operator.lexeme, right)
             }
+            Expr::Null => write!(f, "nil"),
         }
     }
 }

@@ -4,12 +4,15 @@ use std::{
     io::{stdout, BufRead, BufReader, Write},
 };
 
+use parser::Parser;
 use scanner::Scanner;
+use token::Token;
 
+mod expr;
+mod parser;
 mod scanner;
 mod token;
 mod token_type;
-mod expr;
 
 type RunRes = Result<(), Box<dyn Error>>;
 
@@ -53,9 +56,14 @@ impl Lox {
     fn run(&mut self, s: &str) {
         let mut scanner = Scanner::new(s.to_owned(), self);
         let tokens = scanner.scan_tokens();
-        for token in tokens {
-            println!("{token}");
-        }
+	let mut parser = Parser::new(tokens, self);
+	let expression = parser.parse();
+
+	if self.had_error {
+	    return;
+	}
+
+	println!("{}", expression);
     }
 
     fn error(&mut self, line: usize, message: &str) {
@@ -65,5 +73,17 @@ impl Lox {
     fn report(&mut self, line: usize, wher: &str, message: &str) {
         eprintln!("[line {line}] Error{wher}: {message}");
         self.had_error = true;
+    }
+
+    fn parse_error(&mut self, token: Token, message: &str) {
+        if token.typ.is_eof() {
+            self.report(token.line, " at end", message);
+        } else {
+            self.report(
+                token.line,
+                &format!(" at '{}'", token.lexeme),
+                message,
+            );
+        }
     }
 }

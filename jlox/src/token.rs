@@ -2,10 +2,12 @@ use std::fmt::Display;
 
 use crate::token_type::TokenType;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub(crate) enum Literal {
     String(String),
     Number(f64),
+    True,
+    False,
     Null,
 }
 
@@ -15,15 +17,18 @@ impl Display for Literal {
             Literal::String(s) => write!(f, "{}", s),
             Literal::Number(n) => write!(f, "{}", n),
             Literal::Null => write!(f, "nil"),
+            Literal::True => write!(f, "true"),
+            Literal::False => write!(f, "false"),
         }
     }
 }
 
+#[derive(Clone)]
 pub(crate) struct Token {
-    typ: TokenType,
+    pub(crate) typ: TokenType,
     pub(crate) lexeme: String,
-    literal: Literal,
-    line: usize,
+    pub(crate) literal: Literal,
+    pub(crate) line: usize,
 }
 
 impl Token {

@@ -2,7 +2,6 @@ use std::collections::HashMap;
 
 use lazy_static::lazy_static;
 
-use crate::expr::Expr;
 use crate::token::{Literal, Token};
 use crate::token_type::TokenType;
 use crate::Lox;
@@ -127,7 +126,7 @@ impl<'a> Scanner<'a> {
             '\n' => self.line += 1,
             '"' => self.string(),
             _ => {
-                if c.is_digit(10) {
+                if c.is_ascii_digit() {
                     self.number();
                 } else if is_alpha(c) {
                     self.identifier();
@@ -251,5 +250,5 @@ fn is_alpha(c: char) -> bool {
 
 // NOTE that we use the built-in is_digit but our own is_alpha throughout
 fn is_alphanumeric(c: char) -> bool {
-    c.is_digit(10) || is_alpha(c)
+    c.is_ascii_digit() || is_alpha(c)
 }
