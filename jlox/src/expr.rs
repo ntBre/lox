@@ -2,6 +2,7 @@ use std::fmt::Display;
 
 use crate::token::{Literal, Token};
 
+#[derive(Debug)]
 pub(crate) enum Expr {
     Binary {
         left: Box<Expr>,

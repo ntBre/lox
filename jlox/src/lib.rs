@@ -4,11 +4,14 @@ use std::{
     io::{stdout, BufRead, BufReader, Write},
 };
 
+use expr::Expr;
+use interpreter::RuntimeError;
 use parser::Parser;
 use scanner::Scanner;
 use token::Token;
 
 mod expr;
+mod interpreter;
 mod parser;
 mod scanner;
 mod token;
@@ -19,11 +22,25 @@ type RunRes = Result<(), Box<dyn Error>>;
 #[derive(Default)]
 pub struct Lox {
     had_error: bool,
+    had_runtime_error: bool,
 }
 
 impl Lox {
     pub fn new() -> Self {
-        Self { had_error: false }
+        Self {
+            had_error: false,
+            had_runtime_error: false,
+        }
+    }
+
+    /// NOTE defining this on self instead of defining a weird, empty
+    /// Interpreter struct. I think the Java version needs that because of the
+    /// Visitor pattern.
+    fn interpret(&mut self, expr: Expr) {
+        match expr.evaluate() {
+            Ok(value) => println!("{value}"),
+            Err(e) => self.runtime_error(e),
+        }
     }
 
     pub fn run_file(&mut self, path: &str) -> RunRes {
@@ -31,6 +48,9 @@ impl Lox {
         if self.had_error {
             std::process::exit(65);
         }
+	if self.had_runtime_error {
+            std::process::exit(70);
+	}
         Ok(())
     }
 
@@ -56,14 +76,14 @@ impl Lox {
     fn run(&mut self, s: &str) {
         let mut scanner = Scanner::new(s.to_owned(), self);
         let tokens = scanner.scan_tokens();
-	let mut parser = Parser::new(tokens, self);
-	let expression = parser.parse();
+        let mut parser = Parser::new(tokens, self);
+        let expression = parser.parse();
 
-	if self.had_error {
-	    return;
-	}
+        if self.had_error {
+            return;
+        }
 
-	println!("{}", expression);
+	self.interpret(expression);
     }
 
     fn error(&mut self, line: usize, message: &str) {
@@ -85,5 +105,10 @@ impl Lox {
                 message,
             );
         }
+    }
+
+    fn runtime_error(&mut self, error: RuntimeError) {
+        eprintln!("{}\n[line {}]", error.message(), error.line());
+        self.had_runtime_error = true;
     }
 }

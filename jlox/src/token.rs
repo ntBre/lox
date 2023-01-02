@@ -23,7 +23,7 @@ impl Display for Literal {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub(crate) struct Token {
     pub(crate) typ: TokenType,
     pub(crate) lexeme: String,
