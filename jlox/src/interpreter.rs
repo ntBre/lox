@@ -104,6 +104,19 @@ impl Stmt {
                 env.define(name.lexeme, value);
                 Ok(Value::Nil)
             }
+            Stmt::Block { statements } => {
+                env.push();
+                for statement in statements {
+                    if let e @ Err(_) = statement.execute(env) {
+			// have to reset the stack before returning in case of
+			// error, so we can't just use ?
+                        env.pop();
+                        return e;
+                    }
+                }
+                env.pop();
+                Ok(Value::Nil)
+            }
         }
     }
 }
@@ -196,12 +209,12 @@ impl Expr {
             Expr::Variable { name } => env.get(name),
             Expr::Assign { name, value } => {
                 let value = value.evaluate(env)?;
-		// NOTE this is a little different from the Java version because
-		// I've made `assign` clone and return the value again instead
-		// of cloning here and then returning value. I don't think it
-		// will make much difference overall, and it means I can return
-		// Result<Value, RuntimeError> from assign instead of Result<(),
-		// RuntimeError> and process that here
+                // NOTE this is a little different from the Java version because
+                // I've made `assign` clone and return the value again instead
+                // of cloning here and then returning value. I don't think it
+                // will make much difference overall, and it means I can return
+                // Result<Value, RuntimeError> from assign instead of Result<(),
+                // RuntimeError> and process that here
                 env.assign(name, value)
             }
         }
