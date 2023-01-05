@@ -131,6 +131,15 @@ impl Stmt {
                 }
             }
             Stmt::Null => todo!(),
+            Stmt::While { condition, body } => {
+		// these clones feel a bit weird. letting execute and evaluate
+		// take &self seems okay as an alternative, but then I have to
+		// clone the strings and numbers instead.
+		while condition.clone().evaluate(env)?.is_truthy() {
+		    body.clone().execute(env)?;
+		}
+		Ok(Value::Nil)
+	    }
         }
     }
 }

@@ -1,12 +1,32 @@
+use std::fmt::Display;
+
 use crate::{expr::Expr, token::Token};
 
+#[derive(Clone, Debug)]
 pub(crate) enum Stmt {
-    Block { statements: Vec<Stmt> },
-    Expression { expression: Expr },
-    If { condition: Expr, then_branch: Box<Stmt>, else_branch: Box<Stmt> },
+    Block {
+        statements: Vec<Stmt>,
+    },
+    Expression {
+        expression: Expr,
+    },
+    If {
+        condition: Expr,
+        then_branch: Box<Stmt>,
+        else_branch: Box<Stmt>,
+    },
     Null,
-    Print { expression: Expr },
-    Var { name: Token, initializer: Expr },
+    Print {
+        expression: Expr,
+    },
+    Var {
+        name: Token,
+        initializer: Expr,
+    },
+    While {
+        condition: Expr,
+        body: Box<Stmt>,
+    },
 }
 
 impl Stmt {
@@ -24,5 +44,40 @@ impl Stmt {
     #[must_use]
     pub(crate) fn is_null(&self) -> bool {
         matches!(self, Self::Null)
+    }
+}
+
+impl Display for Stmt {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Stmt::Block { statements } => {
+                writeln!(f, "(progn")?;
+                for s in statements {
+                    writeln!(f, "\t({s})")?;
+                }
+                writeln!(f, ")")
+            }
+            Stmt::Expression { expression } => writeln!(f, "{expression}"),
+            Stmt::If {
+                condition,
+                then_branch,
+                else_branch,
+            } => writeln!(
+                f,
+                "(if {condition}
+\t{then_branch}
+\t{else_branch})"
+            ),
+            Stmt::Null => writeln!(f, "nil"),
+            Stmt::Print { expression } => writeln!(f, "(print {expression})"),
+            Stmt::Var { name, initializer } => {
+                writeln!(f, "(setf {name} {initializer})")
+            }
+            Stmt::While { condition, body } => writeln!(
+                f,
+                "(while {condition}
+\t{body})"
+            ),
+        }
     }
 }

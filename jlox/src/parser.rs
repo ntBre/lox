@@ -62,15 +62,85 @@ impl<'a> Parser<'a> {
     }
 
     fn statement(&mut self) -> Result<Stmt, ParseError> {
-        if self.matches(&[TokenType::If]) {
+        if self.matches(&[TokenType::For]) {
+            self.for_statement()
+        } else if self.matches(&[TokenType::If]) {
             self.if_statement()
         } else if self.matches(&[TokenType::Print]) {
             self.print_statement()
+        } else if self.matches(&[TokenType::While]) {
+            self.while_statement()
         } else if self.matches(&[TokenType::LeftBrace]) {
             Ok(Stmt::block(self.block()?))
         } else {
             self.expression_statement()
         }
+    }
+
+    fn for_statement(&mut self) -> Result<Stmt, ParseError> {
+        self.consume(TokenType::LeftParen, "Expect '(' after 'for'.")?;
+        let initializer = if self.matches(&[TokenType::Semicolon]) {
+            Stmt::Null
+        } else if self.matches(&[TokenType::Var]) {
+            self.var_declaration()?
+        } else {
+            self.expression_statement()?
+        };
+
+        let condition = if !self.matches(&[TokenType::Semicolon]) {
+            self.expression()?
+        } else {
+            Expr::Null
+        };
+        self.consume(TokenType::Semicolon, "Expect ';' after loop condition.")?;
+
+        let increment = if !self.matches(&[TokenType::RightParen]) {
+            self.expression()?
+        } else {
+            Expr::Null
+        };
+        self.consume(TokenType::RightParen, "Expect ')' after for clauses.")?;
+
+        let mut body = self.statement()?;
+        if !increment.is_null() {
+            body = Stmt::block(vec![
+                body,
+                Stmt::Expression {
+                    expression: increment,
+                },
+            ]);
+        }
+
+        let condition = if condition.is_null() {
+            Expr::Literal(Literal::True)
+        } else {
+            condition
+        };
+
+        body = Stmt::While {
+            condition,
+            body: Box::new(body),
+        };
+
+        if !initializer.is_null() {
+            body = Stmt::block(vec![initializer, body]);
+        }
+
+        Ok(body)
+    }
+
+    fn while_statement(&mut self) -> Result<Stmt, ParseError> {
+        self.consume(TokenType::LeftParen, "Expect '(' after 'while'.")?;
+        let condition = self.expression()?;
+        self.consume(
+            TokenType::RightParen,
+            "Expect ')' after while condition.",
+        )?;
+        let body = self.statement()?;
+        Ok(Stmt::While {
+            condition,
+            body: Box::new(body),
+        })
     }
 
     fn if_statement(&mut self) -> Result<Stmt, ParseError> {
