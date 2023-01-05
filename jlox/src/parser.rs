@@ -62,13 +62,32 @@ impl<'a> Parser<'a> {
     }
 
     fn statement(&mut self) -> Result<Stmt, ParseError> {
-        if self.matches(&[TokenType::Print]) {
+        if self.matches(&[TokenType::If]) {
+            self.if_statement()
+        } else if self.matches(&[TokenType::Print]) {
             self.print_statement()
         } else if self.matches(&[TokenType::LeftBrace]) {
             Ok(Stmt::block(self.block()?))
         } else {
             self.expression_statement()
         }
+    }
+
+    fn if_statement(&mut self) -> Result<Stmt, ParseError> {
+        self.consume(TokenType::LeftParen, "Expect '(' after 'if'.")?;
+        let condition = self.expression()?;
+        self.consume(TokenType::RightParen, "Expect ')' after if condition.")?;
+        let then_branch = self.statement()?;
+        let else_branch = if self.matches(&[TokenType::Else]) {
+            self.statement()?
+        } else {
+            Stmt::Null
+        };
+        Ok(Stmt::If {
+            condition,
+            then_branch: Box::new(then_branch),
+            else_branch: Box::new(else_branch),
+        })
     }
 
     fn block(&mut self) -> Result<Vec<Stmt>, ParseError> {
@@ -99,7 +118,7 @@ impl<'a> Parser<'a> {
     }
 
     fn assignment(&mut self) -> Result<Expr, ParseError> {
-        let expr = self.equality()?;
+        let expr = self.or()?;
         if self.matches(&[TokenType::Equal]) {
             let equals = self.previous();
             let value = self.assignment()?;
@@ -109,6 +128,26 @@ impl<'a> Parser<'a> {
             self.error(equals, "Invalid assignment target.");
         }
 
+        Ok(expr)
+    }
+
+    fn or(&mut self) -> Result<Expr, ParseError> {
+        let mut expr = self.and()?;
+        while self.matches(&[TokenType::Or]) {
+            let operator = self.previous();
+            let right = self.and()?;
+            expr = Expr::logical(expr, operator, right);
+        }
+        Ok(expr)
+    }
+
+    fn and(&mut self) -> Result<Expr, ParseError> {
+        let mut expr = self.equality()?;
+        while self.matches(&[TokenType::And]) {
+            let operator = self.previous();
+            let right = self.equality()?;
+            expr = Expr::logical(expr, operator, right);
+        }
         Ok(expr)
     }
 

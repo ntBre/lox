@@ -108,8 +108,8 @@ impl Stmt {
                 env.push();
                 for statement in statements {
                     if let e @ Err(_) = statement.execute(env) {
-			// have to reset the stack before returning in case of
-			// error, so we can't just use ?
+                        // have to reset the stack before returning in case of
+                        // error, so we can't just use ?
                         env.pop();
                         return e;
                     }
@@ -117,6 +117,20 @@ impl Stmt {
                 env.pop();
                 Ok(Value::Nil)
             }
+            Stmt::If {
+                condition,
+                then_branch,
+                else_branch,
+            } => {
+                if condition.evaluate(env)?.is_truthy() {
+                    Ok(then_branch.execute(env)?)
+                } else if !else_branch.is_null() {
+                    Ok(else_branch.execute(env)?)
+                } else {
+                    Ok(Value::Nil)
+                }
+            }
+            Stmt::Null => todo!(),
         }
     }
 }
@@ -216,6 +230,20 @@ impl Expr {
                 // Result<Value, RuntimeError> from assign instead of Result<(),
                 // RuntimeError> and process that here
                 env.assign(name, value)
+            }
+            Expr::Logical {
+                left,
+                operator,
+                right,
+            } => {
+                let left = left.evaluate(env)?;
+                if operator.typ.is_or() && left.is_truthy() {
+                    return Ok(left);
+                }
+                if !left.is_truthy() {
+                    return Ok(left);
+                }
+                right.evaluate(env)
             }
         }
     }

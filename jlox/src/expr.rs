@@ -1,6 +1,9 @@
 use std::fmt::Display;
 
-use crate::token::{Literal, Token};
+use crate::{
+    token::{Literal, Token},
+    token_type::TokenType,
+};
 
 #[derive(Debug)]
 pub(crate) enum Expr {
@@ -17,6 +20,11 @@ pub(crate) enum Expr {
         expression: Box<Expr>,
     },
     Literal(Literal),
+    Logical {
+        left: Box<Expr>,
+        operator: Token,
+        right: Box<Expr>,
+    },
     Null,
     Unary {
         operator: Token,
@@ -34,6 +42,7 @@ impl Expr {
             value: Box::new(value),
         }
     }
+
     pub(crate) fn binary(left: Expr, operator: Token, right: Expr) -> Self {
         Self::Binary {
             left: Box::new(left),
@@ -50,6 +59,14 @@ impl Expr {
 
     pub(crate) fn literal(l: Literal) -> Self {
         Self::Literal(l)
+    }
+
+    pub(crate) fn logical(left: Expr, operator: Token, right: Expr) -> Self {
+        Self::Logical {
+            left: Box::new(left),
+            operator,
+            right: Box::new(right),
+        }
     }
 
     pub(crate) fn unary(operator: Token, right: Expr) -> Self {
@@ -89,6 +106,18 @@ impl Display for Expr {
             Expr::Variable { name } => write!(f, "{name}"),
             Expr::Assign { name, value } => {
                 write!(f, "(assign {name} {value})")
+            }
+            Expr::Logical {
+                left,
+                operator,
+                right,
+            } => {
+                let name = match operator.typ {
+                    TokenType::Or => "or",
+                    TokenType::And => "and",
+                    _ => unimplemented!(),
+                };
+                write!(f, "({name} {left} {right})")
             }
         }
     }

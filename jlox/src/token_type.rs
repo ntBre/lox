@@ -54,4 +54,12 @@ impl TokenType {
     pub(crate) fn is_eof(&self) -> bool {
         matches!(self, Self::Eof)
     }
+
+    /// Returns `true` if the token type is [`Or`].
+    ///
+    /// [`Or`]: TokenType::Or
+    #[must_use]
+    pub(crate) fn is_or(&self) -> bool {
+        matches!(self, Self::Or)
+    }
 }
