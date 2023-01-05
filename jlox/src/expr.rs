@@ -5,7 +5,7 @@ use crate::{
     token_type::TokenType,
 };
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub(crate) enum Expr {
     Assign {
         name: Token,

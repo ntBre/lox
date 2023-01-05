@@ -10,6 +10,7 @@ use crate::{
 /// environment as a stack of HashMaps with a pointer (index) to the current
 /// entry. Traversing the list of parents becomes decrementing current and
 /// recursing
+#[derive(Debug)]
 pub(crate) struct Environment {
     stack: Vec<HashMap<String, Value>>,
     cur: usize,
@@ -70,7 +71,9 @@ impl Environment {
             Ok(value)
         } else if self.cur > 0 {
             self.cur -= 1;
-            self.assign(name, value)
+            let res = self.assign(name, value);
+            self.cur += 1;
+            res
         } else {
             Err(RuntimeError::new(
                 format!("Undefined variable '{}'.", name.lexeme),
