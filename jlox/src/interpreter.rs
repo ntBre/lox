@@ -8,6 +8,10 @@ use crate::{
     token_type::TokenType,
 };
 
+use self::{builtin::Builtin, callable::Callable, function::Function};
+
+pub(crate) mod builtin;
+mod callable;
 mod function;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -16,8 +20,10 @@ pub(crate) enum Value {
     Boolean(bool),
     Number(f64),
     String(String),
-    Function(function::Function),
-    // Builtin(Builtin),
+    // these should both be something like Function(Callable), but everything
+    // I've tried was a disaster with generics
+    Function(Function),
+    Builtin(Builtin),
 }
 
 impl Value {
@@ -39,6 +45,7 @@ impl Display for Value {
             Value::Number(n) => write!(f, "{n}"),
             Value::String(s) => write!(f, "{s}"),
             Value::Function(fun) => write!(f, "{fun}"),
+            Value::Builtin(b) => write!(f, "{b:?}")
         }
     }
 }
@@ -280,25 +287,34 @@ impl Expr {
                     args.push(arg.evaluate(env)?);
                 }
 
-                let Value::Function(fun) = function else {
-		    return Err(RuntimeError::new(
-			"Can only call functions and classes.".to_owned(),
-			paren,
-		    ))
-		};
-
-                if args.len() != fun.arity() {
-                    return Err(RuntimeError::new(
-                        format!(
-                            "Expected {} arguments but got {}.",
-                            fun.arity(),
-                            args.len()
-                        ),
+                match function {
+                    Value::Function(f) => finish_callable(f, args, paren, env),
+                    Value::Builtin(b) => finish_callable(b, args, paren, env),
+                    _ => Err(RuntimeError::new(
+                        "Can only call functions and classes.".to_owned(),
                         paren,
-                    ));
+                    )),
                 }
-                fun.call(env, args)
             }
         }
     }
+}
+
+fn finish_callable(
+    fun: impl Callable,
+    args: Vec<Value>,
+    paren: Token,
+    env: &mut Environment,
+) -> Result<Value, RuntimeError> {
+    if args.len() != fun.arity() {
+        return Err(RuntimeError::new(
+            format!(
+                "Expected {} arguments but got {}.",
+                fun.arity(),
+                args.len()
+            ),
+            paren,
+        ));
+    }
+    fun.call(env, args)
 }

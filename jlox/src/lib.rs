@@ -5,7 +5,7 @@ use std::{
 };
 
 use environment::Environment;
-use interpreter::RuntimeError;
+use interpreter::{builtin::Builtin, RuntimeError, Value};
 use parser::Parser;
 use scanner::Scanner;
 use stmt::Stmt;
@@ -29,10 +29,27 @@ pub struct Lox {
     environment: Environment,
 }
 
+fn clock(_: &mut Environment, _: Vec<Value>) -> Value {
+    Value::Number(
+        std::time::SystemTime::UNIX_EPOCH
+            .elapsed()
+            .unwrap()
+            .as_millis() as f64
+            / 1000.0,
+    )
+}
+
 impl Lox {
     pub fn new() -> Self {
         let mut environment = Environment::new();
-	// environment.define("clock"
+        environment.define(
+            "clock".to_owned(),
+            Value::Builtin(Builtin {
+                name: "clock".to_owned(),
+                params: Vec::new(),
+                fun: clock,
+            }),
+        );
         Self {
             had_error: false,
             had_runtime_error: false,

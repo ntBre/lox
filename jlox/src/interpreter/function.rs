@@ -1,5 +1,6 @@
 use super::RuntimeError;
 use super::Value;
+use super::callable::Callable;
 use crate::environment::Environment;
 use crate::stmt::Stmt;
 use crate::token::Token;
@@ -23,12 +24,14 @@ impl Function {
             body,
         }
     }
+}
 
-    pub(crate) fn arity(&self) -> usize {
+impl Callable for Function {
+     fn arity(&self) -> usize {
 	self.params.len()
     }
 
-    pub(crate) fn call(
+     fn call(
         &self,
         env: &mut Environment,
         arguments: Vec<Value>,
