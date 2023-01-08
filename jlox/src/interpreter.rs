@@ -8,12 +8,16 @@ use crate::{
     token_type::TokenType,
 };
 
+mod function;
+
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) enum Value {
     Nil,
     Boolean(bool),
     Number(f64),
     String(String),
+    Function(function::Function),
+    // Builtin(Builtin),
 }
 
 impl Value {
@@ -34,6 +38,7 @@ impl Display for Value {
             Value::Boolean(b) => write!(f, "{b}"),
             Value::Number(n) => write!(f, "{n}"),
             Value::String(s) => write!(f, "{s}"),
+            Value::Function(fun) => write!(f, "{fun}"),
         }
     }
 }
@@ -92,7 +97,7 @@ impl Stmt {
             Stmt::Expression { expression: e } => e.evaluate(env),
             Stmt::Print { expression: e } => {
                 let value = e.evaluate(env)?;
-                println!("{}", value);
+                println!("{value}");
                 Ok(value)
             }
             Stmt::Var { name, initializer } => {
@@ -132,14 +137,23 @@ impl Stmt {
             }
             Stmt::Null => todo!(),
             Stmt::While { condition, body } => {
-		// these clones feel a bit weird. letting execute and evaluate
-		// take &self seems okay as an alternative, but then I have to
-		// clone the strings and numbers instead.
-		while condition.clone().evaluate(env)?.is_truthy() {
-		    body.clone().execute(env)?;
-		}
-		Ok(Value::Nil)
-	    }
+                // these clones feel a bit weird. letting execute and evaluate
+                // take &self seems okay as an alternative, but then I have to
+                // clone the strings and numbers instead.
+                while condition.clone().evaluate(env)?.is_truthy() {
+                    body.clone().execute(env)?;
+                }
+                Ok(Value::Nil)
+            }
+            Stmt::Function { name, params, body } => {
+                let function = Function::new(Stmt::Function {
+                    name: name.clone(),
+                    params,
+                    body,
+                });
+                env.define(name.lexeme, Value::Function(function));
+                Ok(Value::Nil)
+            }
         }
     }
 }
@@ -253,6 +267,37 @@ impl Expr {
                     return Ok(left);
                 }
                 right.evaluate(env)
+            }
+            Expr::Call {
+                callee,
+                paren,
+                arguments,
+            } => {
+                let function = callee.evaluate(env)?;
+
+                let mut args = Vec::new();
+                for arg in arguments {
+                    args.push(arg.evaluate(env)?);
+                }
+
+                let Value::Function(fun) = function else {
+		    return Err(RuntimeError::new(
+			"Can only call functions and classes.".to_owned(),
+			paren,
+		    ))
+		};
+
+                if args.len() != fun.arity() {
+                    return Err(RuntimeError::new(
+                        format!(
+                            "Expected {} arguments but got {}.",
+                            fun.arity(),
+                            args.len()
+                        ),
+                        paren,
+                    ));
+                }
+                fun.call(env, args)
             }
         }
     }

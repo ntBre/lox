@@ -245,7 +245,7 @@ impl<'a> Scanner<'a> {
 }
 
 fn is_alpha(c: char) -> bool {
-    ('a'..='z').contains(&c) || ('A'..='Z').contains(&c) || c == '_'
+    c.is_ascii_lowercase() || c.is_ascii_uppercase() || c == '_'
 }
 
 // NOTE that we use the built-in is_digit but our own is_alpha throughout

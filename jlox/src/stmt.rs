@@ -2,13 +2,18 @@ use std::fmt::Display;
 
 use crate::{expr::Expr, token::Token};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub(crate) enum Stmt {
     Block {
         statements: Vec<Stmt>,
     },
     Expression {
         expression: Expr,
+    },
+    Function {
+        name: Token,
+        params: Vec<Token>,
+        body: Vec<Stmt>,
     },
     If {
         condition: Expr,
@@ -32,6 +37,14 @@ pub(crate) enum Stmt {
 impl Stmt {
     pub(crate) fn block(statements: Vec<Stmt>) -> Self {
         Self::Block { statements }
+    }
+
+    pub(crate) fn function(
+        name: Token,
+        params: Vec<Token>,
+        body: Vec<Stmt>,
+    ) -> Self {
+        Self::Function { name, params, body }
     }
 
     pub(crate) fn var(name: Token, initializer: Expr) -> Self {
@@ -78,6 +91,21 @@ impl Display for Stmt {
                 "(while {condition}
 \t{body})"
             ),
+            Stmt::Function { name, params, body } => {
+                write!(f, "(defun {name} (")?;
+                for param in params {
+                    write!(f, " {param}")?;
+                }
+
+                for (i, stmt) in body.iter().enumerate() {
+                    write!(f, "\t{stmt}")?;
+                    if i < body.len() - 1 {
+                        writeln!(f)?;
+                    }
+                }
+
+                writeln!(f, ")")
+            }
         }
     }
 }

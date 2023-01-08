@@ -5,7 +5,7 @@ use crate::{
     token_type::TokenType,
 };
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub(crate) enum Expr {
     Assign {
         name: Token,
@@ -15,6 +15,11 @@ pub(crate) enum Expr {
         left: Box<Expr>,
         operator: Token,
         right: Box<Expr>,
+    },
+    Call {
+        callee: Box<Expr>,
+        paren: Token,
+        arguments: Vec<Expr>,
     },
     Grouping {
         expression: Box<Expr>,
@@ -48,6 +53,18 @@ impl Expr {
             left: Box::new(left),
             operator,
             right: Box::new(right),
+        }
+    }
+
+    pub(crate) fn call(
+        callee: Expr,
+        paren: Token,
+        arguments: Vec<Expr>,
+    ) -> Self {
+        Self::Call {
+            callee: Box::new(callee),
+            paren,
+            arguments,
         }
     }
 
@@ -118,6 +135,15 @@ impl Display for Expr {
                     _ => unimplemented!(),
                 };
                 write!(f, "({name} {left} {right})")
+            }
+            Expr::Call {
+                callee, arguments, ..
+            } => {
+                write!(f, "({callee}")?;
+                for arg in arguments {
+                    write!(f, " {arg}")?;
+                }
+                write!(f, ")")
             }
         }
     }

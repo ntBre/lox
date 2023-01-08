@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use crate::token_type::TokenType;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub(crate) enum Literal {
     String(String),
     Number(f64),
@@ -14,8 +14,8 @@ pub(crate) enum Literal {
 impl Display for Literal {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Literal::String(s) => write!(f, "{}", s),
-            Literal::Number(n) => write!(f, "{}", n),
+            Literal::String(s) => write!(f, "{s}"),
+            Literal::Number(n) => write!(f, "{n}"),
             Literal::Null => write!(f, "nil"),
             Literal::True => write!(f, "true"),
             Literal::False => write!(f, "false"),
@@ -23,7 +23,7 @@ impl Display for Literal {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub(crate) struct Token {
     pub(crate) typ: TokenType,
     pub(crate) lexeme: String,

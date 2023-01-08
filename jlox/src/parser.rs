@@ -6,6 +6,8 @@ use crate::{
     Lox,
 };
 
+const ARG_LIMIT: usize = 255;
+
 #[derive(Debug)]
 struct ParseError;
 
@@ -36,7 +38,9 @@ impl<'a> Parser<'a> {
     }
 
     fn declaration(&mut self) -> Result<Stmt, ParseError> {
-        let r = if self.matches(&[TokenType::Var]) {
+        let r = if self.matches(&[TokenType::Fun]) {
+            self.function("function")
+        } else if self.matches(&[TokenType::Var]) {
             self.var_declaration()
         } else {
             self.statement()
@@ -45,6 +49,45 @@ impl<'a> Parser<'a> {
             self.synchronize();
         }
         r
+    }
+
+    /// TODO consider making `kind` an enum that implements Display, so the
+    /// actual kinds are encoded in the types. it's only used for error
+    /// messages, so it's not really a big deal though
+    fn function(&mut self, kind: &str) -> Result<Stmt, ParseError> {
+        let name = self
+            .consume(TokenType::Identifier, &format!("Expect {kind} name."))?;
+        self.consume(
+            TokenType::LeftParen,
+            &format!("Expect '(' after {kind} name."),
+        )?;
+        let mut params = Vec::new();
+        if !self.check(TokenType::RightParen) {
+            loop {
+                if params.len() >= ARG_LIMIT {
+                    self.error(
+                        self.peek(),
+                        &format!(
+                            "Can't have more than {ARG_LIMIT} parameters."
+                        ),
+                    );
+                }
+                params.push(self.consume(
+                    TokenType::Identifier,
+                    "Expect parameter name.",
+                )?);
+                if !self.matches(&[TokenType::Comma]) {
+                    break;
+                }
+            }
+        }
+        self.consume(TokenType::RightParen, "Expect ')' after parameters.")?;
+        self.consume(
+            TokenType::LeftBrace,
+            &format!("Expect '{{' before {kind} body."),
+        )?;
+        let body = self.block()?;
+        Ok(Stmt::function(name, params, body))
     }
 
     fn var_declaration(&mut self) -> Result<Stmt, ParseError> {
@@ -281,7 +324,43 @@ impl<'a> Parser<'a> {
             return Ok(Expr::unary(operator, right));
         }
 
-        self.primary()
+        self.call()
+    }
+
+    fn call(&mut self) -> Result<Expr, ParseError> {
+        let mut expr = self.primary()?;
+        loop {
+            if self.matches(&[TokenType::LeftParen]) {
+                expr = self.finish_call(expr)?;
+            } else {
+                break;
+            }
+        }
+        Ok(expr)
+    }
+
+    /// finish a call expression by consuming argument expressions until a right
+    /// paren
+    fn finish_call(&mut self, callee: Expr) -> Result<Expr, ParseError> {
+        let mut arguments = Vec::new();
+        if !self.check(TokenType::RightParen) {
+            // emulating `do` loop
+            loop {
+                if arguments.len() >= ARG_LIMIT {
+                    self.error(
+                        self.peek(),
+                        &format!("Can't have more than {ARG_LIMIT} arguments."),
+                    );
+                }
+                arguments.push(self.expression()?);
+                if !self.matches(&[TokenType::Comma]) {
+                    break;
+                }
+            }
+        }
+        let paren =
+            self.consume(TokenType::RightParen, "Expect ')' after arguments.")?;
+        Ok(Expr::call(callee, paren, arguments))
     }
 
     fn primary(&mut self) -> Result<Expr, ParseError> {

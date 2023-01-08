@@ -31,10 +31,12 @@ pub struct Lox {
 
 impl Lox {
     pub fn new() -> Self {
+        let mut environment = Environment::new();
+	// environment.define("clock"
         Self {
             had_error: false,
             had_runtime_error: false,
-            environment: Environment::new(),
+            environment,
         }
     }
 
