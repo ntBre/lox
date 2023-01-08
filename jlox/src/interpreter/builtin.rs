@@ -19,7 +19,7 @@ impl Callable for Builtin {
     }
 
     fn call(
-        &self,
+        &mut self,
         env: &mut Environment,
         arguments: Vec<Value>,
     ) -> Result<Value, RuntimeError> {

@@ -24,6 +24,10 @@ pub(crate) enum Stmt {
     Print {
         expression: Expr,
     },
+    Return {
+        keyword: Token,
+        value: Expr,
+    },
     Var {
         name: Token,
         initializer: Expr,
@@ -105,6 +109,9 @@ impl Display for Stmt {
                 }
 
                 writeln!(f, ")")
+            }
+            Stmt::Return { keyword: _, value } => {
+                writeln!(f, "(return {value})")
             }
         }
     }

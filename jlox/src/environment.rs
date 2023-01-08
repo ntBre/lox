@@ -10,7 +10,7 @@ use crate::{
 /// environment as a stack of HashMaps with a pointer (index) to the current
 /// entry. Traversing the list of parents becomes decrementing current and
 /// recursing
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub(crate) struct Environment {
     stack: Vec<HashMap<String, Value>>,
     cur: usize,

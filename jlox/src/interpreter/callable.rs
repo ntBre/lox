@@ -5,7 +5,7 @@ pub(crate) trait Callable {
     fn arity(&self) -> usize;
 
     fn call(
-        &self,
+        &mut self,
         env: &mut Environment,
         arguments: Vec<Value>,
     ) -> Result<Value, RuntimeError>;

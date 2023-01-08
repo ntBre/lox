@@ -45,7 +45,7 @@ impl Display for Value {
             Value::Number(n) => write!(f, "{n}"),
             Value::String(s) => write!(f, "{s}"),
             Value::Function(fun) => write!(f, "{fun}"),
-            Value::Builtin(b) => write!(f, "{b:?}")
+            Value::Builtin(b) => write!(f, "{b:?}"),
         }
     }
 }
@@ -76,22 +76,28 @@ macro_rules! with_numbers {
     };
 }
 
-pub(crate) struct RuntimeError {
-    message: String,
-    token: Token,
+pub(crate) enum RuntimeError {
+    Error { message: String, token: Token },
+    Return(Value),
 }
 
 impl RuntimeError {
     pub(crate) fn new(message: String, token: Token) -> Self {
-        Self { message, token }
+        Self::Error { message, token }
     }
 
     pub(crate) fn message(&self) -> &str {
-        &(self.message)
+        match self {
+            RuntimeError::Error { message, token: _ } => message,
+            RuntimeError::Return(_) => unreachable!(),
+        }
     }
 
     pub(crate) fn line(&self) -> &Token {
-        &(self.token)
+        match self {
+            RuntimeError::Error { message: _, token } => token,
+            RuntimeError::Return(_) => unreachable!(),
+        }
     }
 }
 
@@ -153,13 +159,24 @@ impl Stmt {
                 Ok(Value::Nil)
             }
             Stmt::Function { name, params, body } => {
-                let function = Function::new(Stmt::Function {
-                    name: name.clone(),
-                    params,
-                    body,
-                });
+                let function = Function::new(
+                    Stmt::Function {
+                        name: name.clone(),
+                        params,
+                        body,
+                    },
+                    env.clone(),
+                );
                 env.define(name.lexeme, Value::Function(function));
                 Ok(Value::Nil)
+            }
+            Stmt::Return { keyword: _, value } => {
+                let ret = if !value.is_null() {
+                    value.evaluate(env)?
+                } else {
+                    Value::Nil
+                };
+                Err(RuntimeError::Return(ret))
             }
         }
     }
@@ -301,7 +318,7 @@ impl Expr {
 }
 
 fn finish_callable(
-    fun: impl Callable,
+    mut fun: impl Callable,
     args: Vec<Value>,
     paren: Token,
     env: &mut Environment,
