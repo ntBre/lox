@@ -50,7 +50,6 @@ impl Lox {
         environment.define(
             "clock".to_owned(),
             Value::Builtin(Builtin {
-                name: "clock".to_owned(),
                 params: Vec::new(),
                 fun: clock,
             }),

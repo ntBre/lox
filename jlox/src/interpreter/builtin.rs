@@ -9,7 +9,6 @@ use super::{callable::Callable, RuntimeError, Value};
 #[derive(Clone)]
 #[allow(clippy::type_complexity)]
 pub(crate) struct Builtin {
-    pub(crate) name: String,
     pub(crate) params: Vec<Value>,
     pub(crate) fun:
         fn(&mut Environment, Vec<Rc<RefCell<Value>>>) -> Rc<RefCell<Value>>,
@@ -37,6 +36,6 @@ impl PartialEq for Builtin {
 
 impl Debug for Builtin {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "<builtin fn {}>", self.name)
+        write!(f, "<native fn>")
     }
 }

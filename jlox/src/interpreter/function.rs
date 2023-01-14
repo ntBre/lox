@@ -62,6 +62,6 @@ impl Callable for Function {
 
 impl Display for Function {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "<fn todo!>")
+        write!(f, "<fn {}>", self.name)
     }
 }
