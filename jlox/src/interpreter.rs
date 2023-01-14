@@ -298,11 +298,14 @@ impl Expr {
                 right,
             } => {
                 let left = left.evaluate(env)?;
-                if operator.typ.is_or() && left.borrow().is_truthy() {
-                    return Ok(left);
-                }
-                if !left.borrow().is_truthy() {
-                    return Ok(left);
+                if operator.typ.is_or() {
+                    if left.borrow().is_truthy() {
+                        return Ok(left);
+                    }
+                } else {
+                    if !left.borrow().is_truthy() {
+                        return Ok(left);
+                    }
                 }
                 right.evaluate(env)
             }
