@@ -234,7 +234,7 @@ impl<'a> Parser<'a> {
 
     fn expression_statement(&mut self) -> Result<Stmt, ParseError> {
         let value = self.expression()?;
-        self.consume(TokenType::Semicolon, "Expect ';' after value.")?;
+        self.consume(TokenType::Semicolon, "Expect ';' after expression.")?;
         Ok(Stmt::Expression { expression: value })
     }
 
