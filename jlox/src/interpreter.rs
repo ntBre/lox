@@ -280,7 +280,7 @@ impl Expr {
                     TokenType::Minus => {
                         let Value::Number(n) = *right.borrow() else {
 			    return Err(RuntimeError::new(
-				format!("Operand must be a number."),
+				"Operand must be a number.".to_owned(),
 				operator,
 			    ))
 			};
@@ -332,7 +332,7 @@ impl Expr {
                     args.push(arg.evaluate(env)?);
                 }
 
-                let mut fun = function.as_ptr();
+                let fun = function.as_ptr();
                 match unsafe { &mut *fun } {
                     Value::Function(f) => finish_callable(f, args, paren, env),
                     Value::Builtin(b) => finish_callable(b, args, paren, env),
