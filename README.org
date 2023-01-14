@@ -1,24 +1,3 @@
 Rust implementation of the lox language from [[https://craftinginterpreters.com/][Crafting Interpreters]]. ~jlox~
-contains almost the first 10 chapters of the tree-walking interpreter from Part
-II. It remains unfinished because my ~Environment~ implementation doesn't return
-mutable references to the ~Values~ it contains, which means calling closures
-doesn't update their environments. This means running ~testfiles/counter.lox~
-produces
-
-#+begin_src text
-  1
-  1
-#+end_src
-
-instead of
-
-#+begin_src text
-  1
-  2
-#+end_src
-
-because each call to ~counter~ gets its own, cloned instance of ~counter~ from the
-environment instead of getting the same reference to the same ~counter~.
-
-~clox~ will eventually contain the bytecode interpreter from Part III, hopefully
-with a full implementation.
+contains the tree-walking interpreter from Part II. ~clox~ will eventually contain
+the bytecode interpreter from Part III.
