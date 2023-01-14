@@ -62,9 +62,9 @@ impl Environment {
     ) -> Result<Rc<RefCell<Value>>, RuntimeError> {
         for i in (0..self.stack.len()).rev() {
             if self.stack[i].contains_key(&name.lexeme) {
-                let b =
-                    self.stack[i].get(&name.lexeme).unwrap().as_ptr();
-                unsafe { *b = value };
+                let mut b =
+                    self.stack[i].get(&name.lexeme).unwrap().borrow_mut();
+                *b = value;
                 return Ok(self.stack[i].get(&name.lexeme).unwrap().clone());
             }
         }
