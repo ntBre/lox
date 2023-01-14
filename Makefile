@@ -1,5 +1,11 @@
+clippy:
+	cargo clippy
+
 target/debug/jlox:
 	cargo build
+
+single_test:
+	cargo run ../../clone/craftinginterpreters/test/$(ARGS)
 
 INTERPRETER = ../../Projects/lox/target/debug/jlox
 test: target/debug/jlox
