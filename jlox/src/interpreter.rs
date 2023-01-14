@@ -278,7 +278,12 @@ impl Expr {
                 let right = right.evaluate(env)?;
                 match operator.typ {
                     TokenType::Minus => {
-                        with_numbers!(operator, right => n);
+                        let Value::Number(n) = *right.borrow() else {
+			    return Err(RuntimeError::new(
+				format!("Operand must be a number."),
+				operator,
+			    ))
+			};
                         Ok(Rc::new(RefCell::new(Value::Number(-n))))
                     }
                     TokenType::Bang => Ok(Rc::new(RefCell::new(
