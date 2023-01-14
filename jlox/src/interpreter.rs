@@ -94,9 +94,9 @@ impl RuntimeError {
         }
     }
 
-    pub(crate) fn line(&self) -> &Token {
+    pub(crate) fn line(&self) -> usize {
         match self {
-            RuntimeError::Error { message: _, token } => token,
+            RuntimeError::Error { message: _, token } => token.line,
             RuntimeError::Return(_) => unreachable!(),
         }
     }
