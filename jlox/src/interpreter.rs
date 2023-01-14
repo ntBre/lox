@@ -217,9 +217,17 @@ impl Expr {
                         {
                             with_numbers!(operator, left => a, right => b);
                             Ok(Rc::new(RefCell::new(Value::Number(a + b))))
-                        } else {
+                        } else if matches!(*left.borrow(), Value::String(_))
+                            && matches!(*right.borrow(), Value::String(_))
+                        {
                             with_strings!(operator, left => a, right => b);
                             Ok(Rc::new(RefCell::new(Value::String(a + &b))))
+                        } else {
+                            Err(RuntimeError::new(
+                                "Operands must be two numbers or two strings."
+                                    .to_string(),
+                                operator,
+                            ))
                         }
                     }
                     // NOTE comparisons are only supported for numbers, but I
