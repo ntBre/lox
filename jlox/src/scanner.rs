@@ -85,7 +85,7 @@ impl<'a> Scanner<'a> {
     }
 
     fn at_end(&self) -> bool {
-        self.current >= self.source.len()
+        self.current >= self.source.chars().count()
     }
 
     fn scan_token(&mut self) {
@@ -141,8 +141,13 @@ impl<'a> Scanner<'a> {
         while is_alphanumeric(self.peek()) {
             self.advance();
         }
-        let text = &self.source[self.start..self.current];
-        let typ = match KEYWORDS.get(text) {
+        let text: String = self
+            .source
+            .chars()
+            .skip(self.start)
+            .take(self.current - self.start)
+            .collect();
+        let typ = match KEYWORDS.get(text.as_str()) {
             Some(typ) => *typ,
             None => TokenType::Identifier,
         };
@@ -195,7 +200,12 @@ impl<'a> Scanner<'a> {
         self.add_token(
             TokenType::String,
             Literal::String(
-                self.source[self.start + 1..self.current - 1].to_owned(),
+                self.source
+                    .chars()
+                    .skip(self.start + 1)
+                    // distribute the negative
+                    .take(self.current - 1 - self.start - 1)
+                    .collect(),
             ),
         );
     }
@@ -207,9 +217,13 @@ impl<'a> Scanner<'a> {
     }
 
     fn add_token(&mut self, typ: TokenType, literal: Literal) {
-        let text = &self.source[self.start..self.current];
-        self.tokens
-            .push(Token::new(typ, text.to_owned(), literal, self.line));
+        let text: String = self
+            .source
+            .chars()
+            .skip(self.start)
+            .take(self.current - self.start)
+            .collect();
+        self.tokens.push(Token::new(typ, text, literal, self.line));
     }
 
     fn matches(&mut self, arg: char) -> bool {
@@ -236,7 +250,7 @@ impl<'a> Scanner<'a> {
     // aside, saying that this version emphasizes that we only look ahead a
     // maximum of 2 characters
     fn peek_next(&self) -> char {
-        if self.current + 1 >= self.source.len() {
+        if self.current + 1 >= self.source.chars().count() {
             '\0'
         } else {
             self.source.chars().nth(self.current + 1).unwrap()

@@ -1,7 +1,9 @@
 clippy:
 	cargo clippy
 
-target/debug/jlox:
+TARGET = target/debug/jlox
+.PHONY: $(TARGET)
+$(TARGET):
 	cargo build
 
 single_test:
