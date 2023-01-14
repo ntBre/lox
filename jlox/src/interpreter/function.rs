@@ -37,19 +37,25 @@ impl Callable for Function {
 
     fn call(
         &mut self,
-        _env: &mut Environment,
+        env: &mut Environment,
         arguments: Vec<Rc<RefCell<Value>>>,
     ) -> Result<Rc<RefCell<Value>>, RuntimeError> {
-        self.closure.push();
+        // clone the outer environment, append the closure's stack to it, then
+        // call function. restore the closure at the end
+        let mut env = env.clone();
+        let start = env.stack.len();
+        env.stack.extend(std::mem::take(&mut self.closure.stack));
+        env.push();
         // stupid but satisfies clippy
         (0..self.params.len()).for_each(|i| {
-            self.closure.define(
+            env.define(
                 self.params[i].lexeme.clone(),
                 arguments[i].borrow().clone(),
             );
         });
-        let res = Stmt::block(self.body.clone()).execute(&mut self.closure);
-        self.closure.pop();
+        let res = Stmt::block(self.body.clone()).execute(&mut env);
+        env.pop();
+        self.closure.stack = env.stack[start..].to_owned();
         match res {
             ok @ Ok(_) => ok,
             Err(e) => match e {

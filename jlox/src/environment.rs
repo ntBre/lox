@@ -12,7 +12,7 @@ use crate::{
 /// recursing
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct Environment {
-    stack: Vec<HashMap<String, Rc<RefCell<Value>>>>,
+    pub(crate) stack: Vec<HashMap<String, Rc<RefCell<Value>>>>,
 }
 
 impl Environment {
@@ -62,9 +62,9 @@ impl Environment {
     ) -> Result<Rc<RefCell<Value>>, RuntimeError> {
         for i in (0..self.stack.len()).rev() {
             if self.stack[i].contains_key(&name.lexeme) {
-                let mut b =
-                    self.stack[i].get(&name.lexeme).unwrap().borrow_mut();
-                *b = value;
+                let b =
+                    self.stack[i].get(&name.lexeme).unwrap().as_ptr();
+                unsafe { *b = value };
                 return Ok(self.stack[i].get(&name.lexeme).unwrap().clone());
             }
         }

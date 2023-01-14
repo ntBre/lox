@@ -332,8 +332,8 @@ impl Expr {
                     args.push(arg.evaluate(env)?);
                 }
 
-                let mut fun = function.borrow_mut();
-                match &mut *fun {
+                let mut fun = function.as_ptr();
+                match unsafe { &mut *fun } {
                     Value::Function(f) => finish_callable(f, args, paren, env),
                     Value::Builtin(b) => finish_callable(b, args, paren, env),
                     _ => Err(RuntimeError::new(
