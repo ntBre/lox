@@ -7,6 +7,7 @@ use crate::environment::Environment;
 use super::{callable::Callable, RuntimeError, Value};
 
 #[derive(Clone)]
+#[allow(clippy::type_complexity)]
 pub(crate) struct Builtin {
     pub(crate) name: String,
     pub(crate) params: Vec<Value>,

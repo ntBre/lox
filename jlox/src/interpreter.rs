@@ -68,7 +68,7 @@ macro_rules! with_numbers {
 	$(
 	    let Value::Number($a) = *$left.borrow() else {
 		return Err(RuntimeError::new(
-		    format!("expected Number, got {:?}", $left),
+		    format!("Operands must be numbers."),
 		    $op,
 		))
 	    };
@@ -302,10 +302,8 @@ impl Expr {
                     if left.borrow().is_truthy() {
                         return Ok(left);
                     }
-                } else {
-                    if !left.borrow().is_truthy() {
-                        return Ok(left);
-                    }
+                } else if !left.borrow().is_truthy() {
+                    return Ok(left);
                 }
                 right.evaluate(env)
             }
