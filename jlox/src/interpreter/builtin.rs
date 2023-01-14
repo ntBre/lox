@@ -1,6 +1,6 @@
 //! built-in functions
 
-use std::fmt::Debug;
+use std::{cell::RefCell, fmt::Debug, rc::Rc};
 
 use crate::environment::Environment;
 
@@ -10,7 +10,8 @@ use super::{callable::Callable, RuntimeError, Value};
 pub(crate) struct Builtin {
     pub(crate) name: String,
     pub(crate) params: Vec<Value>,
-    pub(crate) fun: fn(&mut Environment, Vec<Value>) -> Value,
+    pub(crate) fun:
+        fn(&mut Environment, Vec<Rc<RefCell<Value>>>) -> Rc<RefCell<Value>>,
 }
 
 impl Callable for Builtin {
@@ -21,8 +22,8 @@ impl Callable for Builtin {
     fn call(
         &mut self,
         env: &mut Environment,
-        arguments: Vec<Value>,
-    ) -> Result<Value, RuntimeError> {
+        arguments: Vec<Rc<RefCell<Value>>>,
+    ) -> Result<Rc<RefCell<Value>>, RuntimeError> {
         Ok((self.fun)(env, arguments))
     }
 }

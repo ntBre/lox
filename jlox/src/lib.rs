@@ -1,7 +1,9 @@
 use std::{
+    cell::RefCell,
     error::Error,
     fs::read_to_string,
     io::{stdout, BufRead, BufReader, Write},
+    rc::Rc,
 };
 
 use environment::Environment;
@@ -29,14 +31,17 @@ pub struct Lox {
     environment: Environment,
 }
 
-fn clock(_: &mut Environment, _: Vec<Value>) -> Value {
-    Value::Number(
+fn clock(
+    _: &mut Environment,
+    _: Vec<Rc<RefCell<Value>>>,
+) -> Rc<RefCell<Value>> {
+    Rc::new(RefCell::new(Value::Number(
         std::time::SystemTime::UNIX_EPOCH
             .elapsed()
             .unwrap()
             .as_millis() as f64
             / 1000.0,
-    )
+    )))
 }
 
 impl Lox {

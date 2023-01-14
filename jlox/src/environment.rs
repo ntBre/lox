@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{
     interpreter::{RuntimeError, Value},
@@ -12,7 +12,7 @@ use crate::{
 /// recursing
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct Environment {
-    stack: Vec<HashMap<String, Value>>,
+    stack: Vec<HashMap<String, Rc<RefCell<Value>>>>,
 }
 
 impl Environment {
@@ -35,10 +35,13 @@ impl Environment {
 
     pub(crate) fn define(&mut self, name: String, value: Value) {
         let i = self.stack.len() - 1;
-        self.stack[i].insert(name, value);
+        self.stack[i].insert(name, Rc::new(RefCell::new(value)));
     }
 
-    pub(crate) fn get(&mut self, name: Token) -> Result<Value, RuntimeError> {
+    pub(crate) fn get(
+        &mut self,
+        name: Token,
+    ) -> Result<Rc<RefCell<Value>>, RuntimeError> {
         for i in (0..self.stack.len()).rev() {
             if let Some(v) = self.stack[i].get(&name.lexeme) {
                 // this is sad, but I have to clone. I guess that's what java
@@ -56,11 +59,13 @@ impl Environment {
         &mut self,
         name: Token,
         value: Value,
-    ) -> Result<Value, RuntimeError> {
+    ) -> Result<Rc<RefCell<Value>>, RuntimeError> {
         for i in (0..self.stack.len()).rev() {
             if self.stack[i].contains_key(&name.lexeme) {
-                self.define(name.lexeme, value.clone());
-                return Ok(value);
+                let mut b =
+                    self.stack[i].get(&name.lexeme).unwrap().borrow_mut();
+                *b = value;
+                return Ok(self.stack[i].get(&name.lexeme).unwrap().clone());
             }
         }
         Err(RuntimeError::new(
