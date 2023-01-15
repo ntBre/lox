@@ -9,7 +9,7 @@ use std::{
 
 use environment::Environment;
 use expr::Expr;
-use interpreter::{builtin::Builtin, RuntimeError, Value};
+use interpreter::{builtin::Builtin, value::Value, RuntimeError};
 use parser::Parser;
 use resolver::Resolver;
 use scanner::Scanner;
@@ -68,7 +68,7 @@ impl Lox {
     }
 
     fn resolve(&mut self, expr: Expr, depth: usize) {
-	self.locals.insert(expr, depth);
+        self.locals.insert(expr, depth);
     }
 
     /// NOTE defining this and the `environment` on self instead of defining an

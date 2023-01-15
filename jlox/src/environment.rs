@@ -1,7 +1,7 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{
-    interpreter::{RuntimeError, Value},
+    interpreter::{value::Value, RuntimeError},
     token::Token,
 };
 
