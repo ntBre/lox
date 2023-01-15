@@ -124,8 +124,8 @@ impl Lox {
             return;
         }
 
-        let mut resolver = Resolver::new(self);
-        resolver.resolve(&statements);
+        // let mut resolver = Resolver::new(self);
+        // resolver.resolve(&statements);
 
         self.interpret(statements);
     }

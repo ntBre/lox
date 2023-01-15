@@ -35,9 +35,7 @@ impl std::hash::Hash for Literal {
         match self {
             Literal::String(s) => s.hash(state),
             Literal::Number(n) => n.to_bits().hash(state),
-            t @ Literal::True => t.hash(state),
-            f @ Literal::False => f.hash(state),
-            n @ Literal::Null => n.hash(state),
+            a => std::mem::discriminant(a).hash(state),
         }
     }
 }
