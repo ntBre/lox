@@ -5,7 +5,7 @@ use crate::{
     token_type::TokenType,
 };
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub(crate) enum Expr {
     Assign {
         name: Token,

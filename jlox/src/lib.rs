@@ -1,5 +1,6 @@
 use std::{
     cell::RefCell,
+    collections::HashMap,
     error::Error,
     fs::read_to_string,
     io::{stdout, BufRead, BufReader, Write},
@@ -7,8 +8,10 @@ use std::{
 };
 
 use environment::Environment;
+use expr::Expr;
 use interpreter::{builtin::Builtin, RuntimeError, Value};
 use parser::Parser;
+use resolver::Resolver;
 use scanner::Scanner;
 use stmt::Stmt;
 use token::Token;
@@ -17,6 +20,7 @@ mod environment;
 mod expr;
 mod interpreter;
 mod parser;
+mod resolver;
 mod scanner;
 mod stmt;
 mod token;
@@ -29,6 +33,7 @@ pub struct Lox {
     had_error: bool,
     had_runtime_error: bool,
     environment: Environment,
+    locals: HashMap<Expr, usize>,
 }
 
 fn clock(
@@ -58,7 +63,12 @@ impl Lox {
             had_error: false,
             had_runtime_error: false,
             environment,
+            locals: HashMap::new(),
         }
+    }
+
+    fn resolve(&mut self, expr: Expr, depth: usize) {
+	self.locals.insert(expr, depth);
     }
 
     /// NOTE defining this and the `environment` on self instead of defining an
@@ -113,6 +123,9 @@ impl Lox {
         if self.had_error {
             return;
         }
+
+        let mut resolver = Resolver::new(self);
+        resolver.resolve(&statements);
 
         self.interpret(statements);
     }
