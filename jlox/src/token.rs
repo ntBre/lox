@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use crate::token_type::TokenType;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 pub(crate) enum Literal {
     String(String),
     Number(f64),
@@ -12,6 +12,23 @@ pub(crate) enum Literal {
 }
 
 impl Eq for Literal {}
+
+// NOTE have to implement this to satisfy clippy that the eq and hash
+// implementations are the same
+impl PartialEq for Literal {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Literal::String(a), Literal::String(b)) => a.eq(b),
+            (Literal::Number(a), Literal::Number(b)) => {
+                a.to_bits().eq(&b.to_bits())
+            }
+            (Literal::True, Literal::True)
+            | (Literal::False, Literal::False)
+            | (Literal::Null, Literal::Null) => true,
+            _ => false,
+        }
+    }
+}
 
 impl std::hash::Hash for Literal {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {

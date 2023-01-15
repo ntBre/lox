@@ -70,7 +70,7 @@ impl<'a> Resolver<'a> {
         match statement {
             Stmt::Block { statements } => {
                 self.begin_scope();
-                self.resolve(&statements);
+                self.resolve(statements);
                 self.end_scope();
             }
             Stmt::Expression { expression } => {
@@ -115,7 +115,7 @@ impl<'a> Resolver<'a> {
         }
     }
 
-    fn resolve_function(&mut self, params: &Vec<Token>, body: &Vec<Stmt>) {
+    fn resolve_function(&mut self, params: &Vec<Token>, body: &[Stmt]) {
         self.begin_scope();
         for param in params {
             self.declare(param);
@@ -144,14 +144,14 @@ impl<'a> Resolver<'a> {
                 paren: _,
                 arguments,
             } => {
-                self.resolve_expr(&callee);
+                self.resolve_expr(callee);
 
                 for arg in arguments {
                     self.resolve_expr(arg);
                 }
             }
             Expr::Grouping { expression } => {
-                self.resolve_expr(&expression);
+                self.resolve_expr(expression);
             }
             Expr::Literal(_) => {}
             Expr::Logical {
