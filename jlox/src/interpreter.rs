@@ -1,4 +1,4 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{
     environment::Environment,
@@ -6,14 +6,71 @@ use crate::{
     stmt::Stmt,
     token::{Literal, Token},
     token_type::TokenType,
+    Lox,
 };
 
-use self::{callable::Callable, function::Function, value::Value};
+use self::{
+    builtin::Builtin, callable::Callable, function::Function, value::Value,
+};
 
 pub(crate) mod builtin;
 mod callable;
 mod function;
 pub(crate) mod value;
+
+pub(crate) struct Interpreter<'a> {
+    pub(crate) lox: &'a mut Lox,
+    globals: Environment,
+
+    /// index of the current environment in globals
+    environment: usize,
+
+    locals: HashMap<Expr, usize>,
+}
+
+fn clock(
+    _: &mut Environment,
+    _: Vec<Rc<RefCell<Value>>>,
+) -> Rc<RefCell<Value>> {
+    Rc::new(RefCell::new(Value::Number(
+        std::time::SystemTime::UNIX_EPOCH
+            .elapsed()
+            .unwrap()
+            .as_millis() as f64
+            / 1000.0,
+    )))
+}
+
+impl<'a> Interpreter<'a> {
+    pub(crate) fn new(lox: &'a mut Lox) -> Self {
+        let mut globals = Environment::new();
+        globals.define(
+            "clock".to_owned(),
+            Value::Builtin(Builtin {
+                params: Vec::new(),
+                fun: clock,
+            }),
+        );
+        Self {
+            lox,
+            globals,
+            environment: 0,
+            locals: HashMap::new(),
+        }
+    }
+
+    pub(crate) fn interpret(&mut self, statements: Vec<Stmt>) {
+        for statement in statements {
+            if let Err(e) = statement.execute(&mut self.globals) {
+                self.lox.runtime_error(e);
+            }
+        }
+    }
+
+    pub(crate) fn resolve(&mut self, expr: Expr, depth: usize) {
+        self.locals.insert(expr, depth);
+    }
+}
 
 macro_rules! with_strings {
     ($op:ident, $($left:ident => $a:ident$(,)*)*) => {

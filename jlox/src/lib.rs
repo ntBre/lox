@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use std::{
     cell::RefCell,
     collections::HashMap,
@@ -9,7 +11,7 @@ use std::{
 
 use environment::Environment;
 use expr::Expr;
-use interpreter::{builtin::Builtin, value::Value, RuntimeError};
+use interpreter::{builtin::Builtin, value::Value, Interpreter, RuntimeError};
 use parser::Parser;
 use resolver::Resolver;
 use scanner::Scanner;
@@ -32,55 +34,13 @@ type RunRes = Result<(), Box<dyn Error>>;
 pub struct Lox {
     had_error: bool,
     had_runtime_error: bool,
-    environment: Environment,
-    locals: HashMap<Expr, usize>,
-}
-
-fn clock(
-    _: &mut Environment,
-    _: Vec<Rc<RefCell<Value>>>,
-) -> Rc<RefCell<Value>> {
-    Rc::new(RefCell::new(Value::Number(
-        std::time::SystemTime::UNIX_EPOCH
-            .elapsed()
-            .unwrap()
-            .as_millis() as f64
-            / 1000.0,
-    )))
 }
 
 impl Lox {
     pub fn new() -> Self {
-        let mut environment = Environment::new();
-        environment.define(
-            "clock".to_owned(),
-            Value::Builtin(Builtin {
-                params: Vec::new(),
-                fun: clock,
-            }),
-        );
         Self {
             had_error: false,
             had_runtime_error: false,
-            environment,
-            locals: HashMap::new(),
-        }
-    }
-
-    fn resolve(&mut self, expr: Expr, depth: usize) {
-        self.locals.insert(expr, depth);
-    }
-
-    /// NOTE defining this and the `environment` on self instead of defining an
-    /// Interpreter struct. I think the Java version needs that because of the
-    /// Visitor pattern and I can't see how to make it work with Rust lifetimes
-    /// because the Interpreter needs a mutable reference to Lox itself for
-    /// errors
-    fn interpret(&mut self, statements: Vec<Stmt>) {
-        for statement in statements {
-            if let Err(e) = statement.execute(&mut self.environment) {
-                self.runtime_error(e);
-            }
         }
     }
 
@@ -124,10 +84,12 @@ impl Lox {
             return;
         }
 
-        // let mut resolver = Resolver::new(self);
+        let mut interpreter = Interpreter::new(self);
+
+        // let mut resolver = Resolver::new(&mut interpreter);
         // resolver.resolve(&statements);
 
-        self.interpret(statements);
+        interpreter.interpret(statements);
     }
 
     fn error(&mut self, line: usize, message: &str) {

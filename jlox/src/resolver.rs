@@ -1,6 +1,8 @@
 use std::{collections::HashMap, ops::Index};
 
-use crate::{expr::Expr, stmt::Stmt, token::Token, Lox};
+use crate::{
+    expr::Expr, interpreter::Interpreter, stmt::Stmt, token::Token, Lox,
+};
 
 struct Stack<T> {
     data: Vec<T>,
@@ -45,17 +47,17 @@ where
     }
 }
 
-pub(crate) struct Resolver<'a> {
+pub(crate) struct Resolver<'a, 'b> {
     /// interpreter field from java code
-    lox: &'a mut Lox,
+    interpreter: &'a mut Interpreter<'b>,
 
     scopes: Stack<HashMap<String, bool>>,
 }
 
-impl<'a> Resolver<'a> {
-    pub(crate) fn new(lox: &'a mut Lox) -> Self {
+impl<'a, 'b> Resolver<'a, 'b> {
+    pub(crate) fn new(interpreter: &'a mut Interpreter<'b>) -> Self {
         Self {
-            lox,
+            interpreter,
             scopes: Stack::new(),
         }
     }
@@ -167,13 +169,14 @@ impl<'a> Resolver<'a> {
                 self.resolve_expr(right);
             }
             Expr::Variable { name } => {
-                if !self.scopes.is_empty()
-                    && self.scopes.peek().get(&name.lexeme).unwrap() == &false
-                {
-                    self.lox.parse_error(
-                        name.clone(),
-                        "Can't read local variable in its own initializer",
-                    );
+                if !self.scopes.is_empty() {
+                    let test = self.scopes.peek().get(&name.lexeme).unwrap();
+                    if test == &false {
+                        self.interpreter.lox.parse_error(
+                            name.clone(),
+                            "Can't read local variable in its own initializer",
+                        );
+                    }
                 }
 
                 self.resolve_local(expr, name);
@@ -209,7 +212,8 @@ impl<'a> Resolver<'a> {
     fn resolve_local(&mut self, expr: &Expr, name: &Token) {
         for i in (0..self.scopes.len()).rev() {
             if self.scopes[i].contains_key(&name.lexeme) {
-                self.lox.resolve(expr.clone(), self.scopes.len() - 1 - i);
+                self.interpreter
+                    .resolve(expr.clone(), self.scopes.len() - 1 - i);
                 return;
             }
         }
