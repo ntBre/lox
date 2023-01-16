@@ -164,7 +164,14 @@ impl<'a, 'b> Resolver<'a, 'b> {
             }
             Expr::Variable { name } => {
                 if !self.scopes.is_empty() {
-                    let test = self.scopes.peek().get(&name.lexeme).unwrap();
+                    let test = self
+                        .scopes
+                        .peek()
+                        .get(&name.lexeme)
+			// if the get fails in Java, null is returned, which is
+			// not equal to false. this also explains the explicit
+			// test against Boolean.FALSE in the java code
+                        .unwrap_or(&true);
                     if test == &false {
                         self.interpreter.lox.parse_error(
                             name.clone(),
