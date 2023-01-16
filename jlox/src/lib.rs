@@ -88,6 +88,9 @@ impl Lox {
 
         // let mut resolver = Resolver::new(&mut interpreter);
         // resolver.resolve(&statements);
+	if interpreter.lox.had_error {
+	    return;
+	}
 
         interpreter.interpret(statements);
     }

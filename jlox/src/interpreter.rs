@@ -70,6 +70,19 @@ impl<'a> Interpreter<'a> {
     pub(crate) fn resolve(&mut self, expr: Expr, depth: usize) {
         self.locals.insert(expr, depth);
     }
+
+    pub(crate) fn lookup_variable(
+        &mut self,
+        name: Token,
+        expr: &Expr,
+    ) -> Result<Rc<RefCell<Value>>, RuntimeError> {
+        let distance = self.locals.get(expr);
+        if let Some(d) = distance {
+            self.globals.get_at(*d, name)
+        } else {
+            self.globals.get(name)
+        }
+    }
 }
 
 macro_rules! with_strings {
@@ -313,17 +326,21 @@ impl<'a> Interpreter<'a> {
                 }
             }
             Expr::Null => unreachable!(),
-            Expr::Variable { name } => self.globals.get(name),
-            Expr::Assign { name, value } => {
-                let value = self.evaluate(*value)?;
-                // NOTE this is a little different from the Java version because
-                // I've made `assign` clone and return the value again instead
-                // of cloning here and then returning value. I don't think it
-                // will make much difference overall, and it means I can return
-                // Result<Value, RuntimeError> from assign instead of Result<(),
-                // RuntimeError> and process that here
+            Expr::Variable { ref name } => {
+                self.lookup_variable(name.clone(), &expr)
+            }
+            Expr::Assign {
+                ref name,
+                ref value,
+            } => {
+                let value = self.evaluate(*value.clone())?;
+                let d = self.locals.get(&expr);
                 let v = value.borrow();
-                self.globals.assign(name, v.clone())
+                if let Some(d) = d {
+                    self.globals.assign_at(*d, name.clone(), v.clone())
+                } else {
+                    self.globals.assign(name.clone(), v.clone())
+                }
             }
             Expr::Logical {
                 left,

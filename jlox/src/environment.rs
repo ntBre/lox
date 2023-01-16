@@ -36,6 +36,8 @@ impl IndexMut<usize> for Environment {
     }
 }
 
+type EnvResult = Result<Rc<RefCell<Value>>, RuntimeError>;
+
 impl Environment {
     pub(crate) fn new() -> Self {
         Self {
@@ -59,10 +61,7 @@ impl Environment {
         self.stack[i].insert(name, Rc::new(RefCell::new(value)));
     }
 
-    pub(crate) fn get(
-        &mut self,
-        name: Token,
-    ) -> Result<Rc<RefCell<Value>>, RuntimeError> {
+    pub(crate) fn get(&mut self, name: Token) -> EnvResult {
         for i in (0..self.stack.len()).rev() {
             if let Some(v) = self.stack[i].get(&name.lexeme) {
                 // this is sad, but I have to clone. I guess that's what java
@@ -74,6 +73,16 @@ impl Environment {
             format!("Undefined variable '{}'.", name.lexeme),
             name,
         ))
+    }
+
+    pub(crate) fn get_at(&mut self, distance: usize, name: Token) -> EnvResult {
+        match self.stack[self.ancestor(distance)].get(&name.lexeme) {
+            Some(v) => Ok(v.clone()),
+            None => Err(RuntimeError::new(
+                format!("Undefined variable '{}'.", name.lexeme),
+                name,
+            )),
+        }
     }
 
     pub(crate) fn assign(
@@ -93,6 +102,25 @@ impl Environment {
             format!("Undefined variable '{}'.", name.lexeme),
             name,
         ))
+    }
+
+    pub(crate) fn assign_at(
+        &mut self,
+        distance: usize,
+        name: Token,
+        value: Value,
+    ) -> EnvResult {
+        // looks a bit suspicious unwrapping, but I guess we know the variable
+        // has been resolved from the resolver
+        let i = self.ancestor(distance);
+        let mut b = self.stack[i].get(&name.lexeme).unwrap().borrow_mut();
+        *b = value;
+        return Ok(self.stack[i].get(&name.lexeme).unwrap().clone());
+    }
+
+    /// if len is 9 and distance is 0, need to return 8, the last valid index
+    fn ancestor(&self, distance: usize) -> usize {
+        self.stack.len() - distance - 1
     }
 }
 
