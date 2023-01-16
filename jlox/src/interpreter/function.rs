@@ -1,4 +1,5 @@
 use super::callable::Callable;
+use super::Interpreter;
 use super::RuntimeError;
 use super::Value;
 use crate::environment::Environment;
@@ -37,12 +38,12 @@ impl Callable for Function {
 
     fn call(
         &mut self,
-        env: &mut Environment,
+        int: &mut Interpreter,
         arguments: Vec<Rc<RefCell<Value>>>,
     ) -> Result<Rc<RefCell<Value>>, RuntimeError> {
         // clone the outer environment, append the closure's stack to it, then
         // call function. restore the closure at the end
-        let mut env = env.clone();
+        let mut env = int.globals.clone();
         let start = env.stack.len();
         env.stack.extend(std::mem::take(&mut self.closure.stack));
         env.push();
@@ -53,9 +54,12 @@ impl Callable for Function {
                 arguments[i].borrow().clone(),
             );
         });
-        let res = Stmt::block(self.body.clone()).execute(&mut env);
-        env.pop();
-        self.closure.stack = env.stack[start..].to_owned();
+        let tmp = std::mem::take(&mut int.globals);
+        int.globals = env;
+        let res = int.execute(Stmt::block(self.body.clone()));
+        int.globals.pop();
+        self.closure.stack = int.globals.stack[start..].to_owned();
+        int.globals = tmp;
         match res {
             ok @ Ok(_) => ok,
             Err(e) => match e {

@@ -1,6 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 
-use super::{RuntimeError, Value};
+use super::{RuntimeError, Value, Interpreter};
 use crate::environment::Environment;
 
 pub(crate) trait Callable {
@@ -8,7 +8,7 @@ pub(crate) trait Callable {
 
     fn call(
         &mut self,
-        env: &mut Environment,
+        int: &mut Interpreter,
         arguments: Vec<Rc<RefCell<Value>>>,
     ) -> Result<Rc<RefCell<Value>>, RuntimeError>;
 }

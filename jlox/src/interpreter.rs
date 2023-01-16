@@ -61,7 +61,7 @@ impl<'a> Interpreter<'a> {
 
     pub(crate) fn interpret(&mut self, statements: Vec<Stmt>) {
         for statement in statements {
-            if let Err(e) = statement.execute(&mut self.globals) {
+            if let Err(e) = self.execute(statement) {
                 self.lox.runtime_error(e);
             }
         }
@@ -124,38 +124,38 @@ impl RuntimeError {
     }
 }
 
-impl Stmt {
+impl<'a> Interpreter<'a> {
     pub(crate) fn execute(
-        self,
-        env: &mut Environment,
+        &mut self,
+        stmt: Stmt,
     ) -> Result<Rc<RefCell<Value>>, RuntimeError> {
-        match self {
-            Stmt::Expression { expression: e } => e.evaluate(env),
+        match stmt {
+            Stmt::Expression { expression: e } => self.evaluate(e),
             Stmt::Print { expression: e } => {
-                let value = e.evaluate(env)?;
+                let value = self.evaluate(e)?;
                 println!("{}", value.borrow());
                 Ok(value)
             }
             Stmt::Var { name, initializer } => {
                 let value = if !initializer.is_null() {
-                    initializer.evaluate(env)?
+                    self.evaluate(initializer)?
                 } else {
                     Rc::new(RefCell::new(Value::Nil))
                 };
-                env.define(name.lexeme, value.borrow().clone());
+                self.globals.define(name.lexeme, value.borrow().clone());
                 Ok(Rc::new(RefCell::new(Value::Nil)))
             }
             Stmt::Block { statements } => {
-                env.push();
+                self.globals.push();
                 for statement in statements {
-                    if let e @ Err(_) = statement.execute(env) {
+                    if let e @ Err(_) = self.execute(statement) {
                         // have to reset the stack before returning in case of
                         // error, so we can't just use ?
-                        env.pop();
+                        self.globals.pop();
                         return e;
                     }
                 }
-                env.pop();
+                self.globals.pop();
                 Ok(Rc::new(RefCell::new(Value::Nil)))
             }
             Stmt::If {
@@ -163,10 +163,10 @@ impl Stmt {
                 then_branch,
                 else_branch,
             } => {
-                if condition.evaluate(env)?.borrow().is_truthy() {
-                    Ok(then_branch.execute(env)?)
+                if self.evaluate(condition)?.borrow().is_truthy() {
+                    Ok(self.execute(*then_branch)?)
                 } else if !else_branch.is_null() {
-                    Ok(else_branch.execute(env)?)
+                    Ok(self.execute(*else_branch)?)
                 } else {
                     Ok(Rc::new(RefCell::new(Value::Nil)))
                 }
@@ -176,8 +176,8 @@ impl Stmt {
                 // these clones feel a bit weird. letting execute and evaluate
                 // take &self seems okay as an alternative, but then I have to
                 // clone the strings and numbers instead.
-                while condition.clone().evaluate(env)?.borrow().is_truthy() {
-                    body.clone().execute(env)?;
+                while self.evaluate(condition.clone())?.borrow().is_truthy() {
+                    self.execute(*body.clone())?;
                 }
                 Ok(Rc::new(RefCell::new(Value::Nil)))
             }
@@ -188,14 +188,14 @@ impl Stmt {
                         params,
                         body,
                     },
-                    env.clone(),
+                    self.globals.clone(),
                 );
-                env.define(name.lexeme, Value::Function(function));
+                self.globals.define(name.lexeme, Value::Function(function));
                 Ok(Rc::new(RefCell::new(Value::Nil)))
             }
             Stmt::Return { keyword: _, value } => {
                 let ret = if !value.is_null() {
-                    value.evaluate(env)?
+                    self.evaluate(value)?
                 } else {
                     Rc::new(RefCell::new(Value::Nil))
                 };
@@ -203,22 +203,20 @@ impl Stmt {
             }
         }
     }
-}
 
-impl Expr {
     /// consume the expression in `self` and evaluate it to a [Value]
     pub(crate) fn evaluate(
-        self,
-        env: &mut Environment,
+        &mut self,
+        expr: Expr,
     ) -> Result<Rc<RefCell<Value>>, RuntimeError> {
-        match self {
+        match expr {
             Expr::Binary {
                 left,
                 operator,
                 right,
             } => {
-                let left = left.evaluate(env)?;
-                let right = right.evaluate(env)?;
+                let left = self.evaluate(*left)?;
+                let right = self.evaluate(*right)?;
 
                 match operator.typ {
                     TokenType::Minus => {
@@ -280,7 +278,7 @@ impl Expr {
                     _ => unreachable!(),
                 }
             }
-            Expr::Grouping { expression } => expression.evaluate(env),
+            Expr::Grouping { expression } => self.evaluate(*expression),
             Expr::Literal(l) => match l {
                 Literal::String(s) => {
                     Ok(Rc::new(RefCell::new(Value::String(s))))
@@ -297,7 +295,7 @@ impl Expr {
                 Literal::Null => Ok(Rc::new(RefCell::new(Value::Nil))),
             },
             Expr::Unary { operator, right } => {
-                let right = right.evaluate(env)?;
+                let right = self.evaluate(*right)?;
                 match operator.typ {
                     TokenType::Minus => {
                         let Value::Number(n) = *right.borrow() else {
@@ -315,9 +313,9 @@ impl Expr {
                 }
             }
             Expr::Null => unreachable!(),
-            Expr::Variable { name } => env.get(name),
+            Expr::Variable { name } => self.globals.get(name),
             Expr::Assign { name, value } => {
-                let value = value.evaluate(env)?;
+                let value = self.evaluate(*value)?;
                 // NOTE this is a little different from the Java version because
                 // I've made `assign` clone and return the value again instead
                 // of cloning here and then returning value. I don't think it
@@ -325,14 +323,14 @@ impl Expr {
                 // Result<Value, RuntimeError> from assign instead of Result<(),
                 // RuntimeError> and process that here
                 let v = value.borrow();
-                env.assign(name, v.clone())
+                self.globals.assign(name, v.clone())
             }
             Expr::Logical {
                 left,
                 operator,
                 right,
             } => {
-                let left = left.evaluate(env)?;
+                let left = self.evaluate(*left)?;
                 if operator.typ.is_or() {
                     if left.borrow().is_truthy() {
                         return Ok(left);
@@ -340,24 +338,24 @@ impl Expr {
                 } else if !left.borrow().is_truthy() {
                     return Ok(left);
                 }
-                right.evaluate(env)
+                self.evaluate(*right)
             }
             Expr::Call {
                 callee,
                 paren,
                 arguments,
             } => {
-                let function = callee.evaluate(env)?;
+                let function = self.evaluate(*callee)?;
 
                 let mut args = Vec::new();
                 for arg in arguments {
-                    args.push(arg.evaluate(env)?);
+                    args.push(self.evaluate(arg)?);
                 }
 
                 let fun = function.as_ptr();
                 match unsafe { &mut *fun } {
-                    Value::Function(f) => finish_callable(f, args, paren, env),
-                    Value::Builtin(b) => finish_callable(b, args, paren, env),
+                    Value::Function(f) => self.finish_callable(f, args, paren),
+                    Value::Builtin(b) => self.finish_callable(b, args, paren),
                     _ => Err(RuntimeError::new(
                         "Can only call functions and classes.".to_owned(),
                         paren,
@@ -366,23 +364,23 @@ impl Expr {
             }
         }
     }
-}
 
-fn finish_callable(
-    fun: &mut impl Callable,
-    args: Vec<Rc<RefCell<Value>>>,
-    paren: Token,
-    env: &mut Environment,
-) -> Result<Rc<RefCell<Value>>, RuntimeError> {
-    if args.len() != fun.arity() {
-        return Err(RuntimeError::new(
-            format!(
-                "Expected {} arguments but got {}.",
-                fun.arity(),
-                args.len()
-            ),
-            paren,
-        ));
+    fn finish_callable(
+        &mut self,
+        fun: &mut impl Callable,
+        args: Vec<Rc<RefCell<Value>>>,
+        paren: Token,
+    ) -> Result<Rc<RefCell<Value>>, RuntimeError> {
+        if args.len() != fun.arity() {
+            return Err(RuntimeError::new(
+                format!(
+                    "Expected {} arguments but got {}.",
+                    fun.arity(),
+                    args.len()
+                ),
+                paren,
+            ));
+        }
+        fun.call(self, args)
     }
-    fun.call(env, args)
 }

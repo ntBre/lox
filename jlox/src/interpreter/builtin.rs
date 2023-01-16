@@ -4,7 +4,7 @@ use std::{cell::RefCell, fmt::Debug, rc::Rc};
 
 use crate::environment::Environment;
 
-use super::{callable::Callable, RuntimeError, Value};
+use super::{callable::Callable, Interpreter, RuntimeError, Value};
 
 #[derive(Clone)]
 #[allow(clippy::type_complexity)]
@@ -21,10 +21,10 @@ impl Callable for Builtin {
 
     fn call(
         &mut self,
-        env: &mut Environment,
+        int: &mut Interpreter,
         arguments: Vec<Rc<RefCell<Value>>>,
     ) -> Result<Rc<RefCell<Value>>, RuntimeError> {
-        Ok((self.fun)(env, arguments))
+        Ok((self.fun)(&mut int.globals, arguments))
     }
 }
 

@@ -1,9 +1,16 @@
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use std::{
+    cell::RefCell,
+    collections::HashMap,
+    ops::{Index, IndexMut},
+    rc::Rc,
+};
 
 use crate::{
     interpreter::{value::Value, RuntimeError},
     token::Token,
 };
+
+type StackVal = HashMap<String, Rc<RefCell<Value>>>;
 
 /// NOTE instead of representing an Environment as a HashMap with an optional
 /// enclosing HashMap, which led to disastrous lifetime issues, we model the
@@ -12,7 +19,21 @@ use crate::{
 /// recursing
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct Environment {
-    pub(crate) stack: Vec<HashMap<String, Rc<RefCell<Value>>>>,
+    pub(crate) stack: Vec<StackVal>,
+}
+
+impl Index<usize> for Environment {
+    type Output = StackVal;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.stack[index]
+    }
+}
+
+impl IndexMut<usize> for Environment {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.stack[index]
+    }
 }
 
 impl Environment {
