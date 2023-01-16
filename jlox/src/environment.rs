@@ -70,7 +70,11 @@ impl Environment {
             }
         }
         Err(RuntimeError::new(
-            format!("Undefined variable '{}'.", name.lexeme),
+            format!(
+                "{}Undefined variable '{}'.",
+                if cfg!(testing) { "get: " } else { "" },
+                name.lexeme
+            ),
             name,
         ))
     }
@@ -79,7 +83,11 @@ impl Environment {
         match self.stack[self.ancestor(distance)].get(&name.lexeme) {
             Some(v) => Ok(v.clone()),
             None => Err(RuntimeError::new(
-                format!("Undefined variable '{}'.", name.lexeme),
+                format!(
+                    "{}Undefined variable '{}'.",
+                    if cfg!(testing) { "get at: " } else { "" },
+                    name.lexeme
+                ),
                 name,
             )),
         }
@@ -99,7 +107,11 @@ impl Environment {
             }
         }
         Err(RuntimeError::new(
-            format!("Undefined variable '{}'.", name.lexeme),
+            format!(
+                "{}Undefined variable '{}'.",
+                if cfg!(testing) { "assign: " } else { "" },
+                name.lexeme
+            ),
             name,
         ))
     }

@@ -6,8 +6,9 @@ TARGET = target/debug/jlox
 $(TARGET):
 	cargo build
 
+TEST_DIR = ../../clone/craftinginterpreters/test
 single_test:
-	cargo run ../../clone/craftinginterpreters/test/$(ARGS)
+	RUSTFLAGS='--cfg testing' cargo run  $(TEST_DIR)/$(ARGS)
 
 CHAPTER=
 CH = 10
