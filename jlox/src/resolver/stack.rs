@@ -1,5 +1,6 @@
 use std::ops::Index;
 
+#[derive(Debug)]
 pub(crate) struct Stack<T> {
     pub(crate) data: Vec<T>,
 }
