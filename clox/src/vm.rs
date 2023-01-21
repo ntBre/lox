@@ -46,10 +46,10 @@ impl<'a> Vm<'a> {
 
     pub fn interpret(
         &mut self,
-        chunk: &'a Chunk,
+	source: String,
     ) -> Result<(), InterpretError> {
-        self.chunk = Some(chunk);
-        self.run()
+	self.compile(source);
+	Ok(())
     }
 
     fn push(&mut self, value: Value) {
