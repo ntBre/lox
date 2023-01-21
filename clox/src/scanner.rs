@@ -9,10 +9,10 @@ pub(crate) struct Scanner {
 }
 
 pub(crate) struct Token {
-    typ: TokenType,
-    start: usize,
-    length: usize,
-    line: usize,
+    pub(crate) typ: TokenType,
+    pub(crate) start: usize,
+    pub(crate) length: usize,
+    pub(crate) line: usize,
 }
 
 impl Token {
@@ -73,49 +73,49 @@ impl Scanner {
             '/' => return self.make_token(TokenType::Slash),
             '*' => return self.make_token(TokenType::Star),
             '!' => {
-                return self.make_token(ternary!(self.matches('=')
-			 => TokenType::BangEqual, TokenType::Bang))
+                let tok = ternary!(self.matches('=')
+			 => TokenType::BangEqual, TokenType::Bang);
+                return self.make_token(tok);
             }
             '=' => {
-                return self.make_token(ternary!(self.matches('=')
-			 => TokenType::EqualEqual, TokenType::Equal))
+                let tok = ternary!(self.matches('=')
+			 => TokenType::EqualEqual, TokenType::Equal);
+                return self.make_token(tok);
             }
             '<' => {
-                return self.make_token(ternary!(self.matches('=')
-			 => TokenType::LessEqual, TokenType::Less))
+                let tok = ternary!(self.matches('=')
+			 => TokenType::LessEqual, TokenType::Less);
+                return self.make_token(tok);
             }
             '>' => {
-                return self.make_token(ternary!(self.matches('=')
-			 => TokenType::GreaterEqual, TokenType::Greater))
+                let tok = ternary!(self.matches('=')
+			 => TokenType::GreaterEqual, TokenType::Greater);
+                return self.make_token(tok);
             }
+            _ => {}
         }
 
-        return self.error_token("Unexpected character.");
+        self.error_token("Unexpected character.")
     }
 
     fn make_token(&mut self, typ: TokenType) -> Token {
-        return Token::new(
-            typ,
-            self.start,
-            self.current - self.start,
-            self.line,
-        );
+        Token::new(typ, self.start, self.current - self.start, self.line)
     }
 
     fn error_token(&self, arg: &str) -> Token {
-        return Token::new(TokenType::Error, 0, arg.len(), self.line);
+        Token::new(TokenType::Error, 0, arg.len(), self.line)
     }
 
     fn at_end(&self) -> bool {
         self.current == self.source.len()
     }
 
-    fn advance(&self) -> char {
+    fn advance(&mut self) -> char {
         self.current += 1;
         self.source[self.current - 1]
     }
 
-    fn matches(&self, expected: char) -> bool {
+    fn matches(&mut self, expected: char) -> bool {
         if self.at_end() {
             return false;
         }

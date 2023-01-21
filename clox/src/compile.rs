@@ -2,8 +2,8 @@ use crate::{scanner::Scanner, vm::Vm};
 
 impl<'a> Vm<'a> {
     pub(crate) fn compile(&mut self, source: String) {
-        let scanner = Scanner::new(source);
-        let mut line = -1;
+        let mut scanner = Scanner::new(source);
+        let mut line = 0;
         loop {
             let token = scanner.scan_token();
             if token.line != line {

@@ -5,10 +5,7 @@ use std::{
     process::exit,
 };
 
-use clox::{
-    chunk::{Chunk, OpCode},
-    vm::Vm,
-};
+use clox::vm::Vm;
 
 fn run_file(mut vm: Vm, argv: &str) {
     let source = match read_to_string(argv) {
@@ -19,9 +16,7 @@ fn run_file(mut vm: Vm, argv: &str) {
         }
     };
 
-    let result = vm.interpret(source);
-    match result {
-    }
+    vm.interpret(source).unwrap();
 }
 
 fn repl(mut vm: Vm) {
@@ -35,12 +30,12 @@ fn repl(mut vm: Vm) {
             Err(e) => panic!("failed to read line from stdin with '{e:?}'"),
         }
 
-        vm.interpret(line);
+        vm.interpret(line).unwrap();
     }
 }
 
 fn main() {
-    let mut vm = Vm::new();
+    let vm = Vm::new();
 
     let argv: Vec<_> = args().collect();
     let argc = argv.len();
@@ -48,7 +43,7 @@ fn main() {
     if argc == 1 {
         repl(vm);
     } else if argc == 2 {
-        run_file(&argv[1]);
+        run_file(vm, &argv[1]);
     } else {
         eprintln!("Usage: clox [path]");
         exit(64);

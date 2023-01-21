@@ -1,3 +1,7 @@
+use std::fmt::Display;
+
+#[repr(u8)]
+#[derive(Clone, Copy)]
 pub(crate) enum TokenType {
     // Single-character tokens.
     LeftParen,
@@ -47,4 +51,20 @@ pub(crate) enum TokenType {
 
     Error,
     Eof,
+}
+
+impl TokenType {
+    /// Returns `true` if the token type is [`Eof`].
+    ///
+    /// [`Eof`]: TokenType::Eof
+    #[must_use]
+    pub(crate) fn is_eof(&self) -> bool {
+        matches!(self, Self::Eof)
+    }
+}
+
+impl Display for TokenType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", (*self) as u8)
+    }
 }

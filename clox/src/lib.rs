@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 static DEBUG_TRACE_EXECUTION: bool = true;
 
 pub mod chunk;
