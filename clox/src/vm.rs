@@ -113,3 +113,9 @@ impl<'a> Vm<'a> {
         }
     }
 }
+
+impl<'a> Default for Vm<'a> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
