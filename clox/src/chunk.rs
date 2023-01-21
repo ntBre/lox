@@ -3,12 +3,35 @@ use crate::value::{Value, ValueArray};
 #[repr(u8)]
 pub enum OpCode {
     Constant,
+    Add,
+    Subtract,
+    Multiply,
+    Divide,
+    Negate,
     Return,
 }
 
 impl From<OpCode> for u8 {
     fn from(value: OpCode) -> Self {
         value as u8
+    }
+}
+
+impl TryInto<OpCode> for u8 {
+    type Error = ();
+
+    fn try_into(self) -> Result<OpCode, Self::Error> {
+        use OpCode::*;
+        match self {
+            x if x == Constant as u8 => Ok(Constant),
+            x if x == Add as u8 => Ok(Add),
+            x if x == Subtract as u8 => Ok(Subtract),
+            x if x == Multiply as u8 => Ok(Multiply),
+            x if x == Divide as u8 => Ok(Divide),
+            x if x == Negate as u8 => Ok(Negate),
+            x if x == Return as u8 => Ok(Return),
+            _ => Err(()),
+        }
     }
 }
 
