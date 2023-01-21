@@ -28,6 +28,12 @@ pub mod value {
         }
     }
 
+    impl Default for ValueArray {
+        fn default() -> Self {
+            Self::new()
+        }
+    }
+
     impl Index<usize> for ValueArray {
         type Output = Value;
 

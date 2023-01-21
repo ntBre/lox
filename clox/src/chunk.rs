@@ -29,11 +29,17 @@ impl Chunk {
 
     pub fn write_chunk(&mut self, byte: impl Into<u8>, line: usize) {
         self.code.push(byte.into());
-	self.lines.push(line);
+        self.lines.push(line);
     }
 
     pub fn add_constant(&mut self, value: Value) -> u8 {
         self.constants.push(value);
         self.constants.len() as u8 - 1
+    }
+}
+
+impl Default for Chunk {
+    fn default() -> Self {
+        Self::new()
     }
 }
