@@ -1,3 +1,6 @@
 Rust implementation of the lox language from [[https://craftinginterpreters.com/][Crafting Interpreters]]. ~jlox~
-contains the tree-walking interpreter from Part II. ~clox~ will eventually contain
-the bytecode interpreter from Part III.
+contains (most of) the tree-walking interpreter from Part II. ~clox~ contains the
+bytecode interpreter from Part III.
+
+~jlox~ is a bit stalled out because of issues with my ~Environment~ implementation,
+but I may come back to it after working on ~clox~, if all goes well.

@@ -24,3 +24,7 @@ test: target/debug/jlox
 	dart tool/bin/test.dart \
 		$(CHAPTER) --interpreter $(INTERPRETER) \
 		| sed -e 's/\x1b\[[0-9;]*m//g'
+
+.PHONY: clox
+clox:
+	cargo run --bin clox
