@@ -4,6 +4,7 @@
 
 use crate::{
     chunk::{Chunk, OpCode},
+    compile::Parser,
     value::Value,
     DEBUG_TRACE_EXECUTION,
 };
@@ -11,11 +12,12 @@ use crate::{
 const STACK_MAX: usize = 256;
 
 /// use usizes instead of pointers to elements
-pub struct Vm<'a> {
-    chunk: Option<&'a Chunk>,
+pub struct Vm {
+    pub(crate) chunk: Option<Chunk>,
     ip: usize,
     stack: [Value; STACK_MAX],
     stack_top: usize,
+    pub(crate) parser: Parser,
 }
 
 #[derive(Debug)]
@@ -32,7 +34,7 @@ macro_rules! binary_op {
     }
 }
 
-impl<'a> Vm<'a> {
+impl Vm {
     pub fn new() -> Self {
         Self {
             chunk: None,
@@ -41,15 +43,15 @@ impl<'a> Vm<'a> {
             // mem::uninitialized
             stack: [Value::default(); STACK_MAX],
             stack_top: 0,
+            parser: Parser::default(),
         }
     }
 
-    pub fn interpret(
-        &mut self,
-	source: String,
-    ) -> Result<(), InterpretError> {
-	self.compile(source);
-	Ok(())
+    pub fn interpret(&mut self, source: String) -> Result<(), InterpretError> {
+        let chunk = self.compile(source)?;
+        self.chunk = Some(chunk);
+        self.ip = 0;
+        self.run()
     }
 
     fn push(&mut self, value: Value) {
@@ -63,13 +65,14 @@ impl<'a> Vm<'a> {
     }
 
     fn read_byte(&mut self) -> u8 {
-        let res = self.chunk.unwrap().code[self.ip];
+        let res = self.chunk.as_mut().unwrap().code[self.ip];
         self.ip += 1;
         res
     }
 
     pub(crate) fn read_constant(&mut self) -> Value {
-        self.chunk.unwrap().constants[self.read_byte() as usize]
+        let b = self.read_byte();
+        self.chunk.as_mut().unwrap().constants[b as usize]
     }
 
     fn run(&mut self) -> Result<(), InterpretError> {
@@ -80,7 +83,10 @@ impl<'a> Vm<'a> {
                     print!("[ {slot} ]");
                 }
                 println!();
-                self.chunk.unwrap().disassemble_instruction(self.ip);
+                self.chunk
+                    .as_mut()
+                    .unwrap()
+                    .disassemble_instruction(self.ip);
             }
             let instruction = self.read_byte();
             match instruction.try_into() {
@@ -114,7 +120,7 @@ impl<'a> Vm<'a> {
     }
 }
 
-impl<'a> Default for Vm<'a> {
+impl Default for Vm {
     fn default() -> Self {
         Self::new()
     }

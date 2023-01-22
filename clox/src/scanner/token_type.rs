@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 #[repr(u8)]
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default, PartialEq, Eq)]
 pub(crate) enum TokenType {
     // Single-character tokens.
     LeftParen,
@@ -49,6 +49,7 @@ pub(crate) enum TokenType {
     Var,
     While,
 
+    #[default]
     Error,
     Eof,
 }
@@ -60,6 +61,14 @@ impl TokenType {
     #[must_use]
     pub(crate) fn is_eof(&self) -> bool {
         matches!(self, Self::Eof)
+    }
+
+    /// Returns `true` if the token type is [`Error`].
+    ///
+    /// [`Error`]: TokenType::Error
+    #[must_use]
+    pub(crate) fn is_error(&self) -> bool {
+        matches!(self, Self::Error)
     }
 }
 

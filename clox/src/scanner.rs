@@ -8,6 +8,7 @@ pub(crate) struct Scanner {
     line: usize,
 }
 
+#[derive(Clone, Default)]
 pub(crate) struct Token {
     pub(crate) typ: TokenType,
     pub(crate) start: usize,
@@ -53,6 +54,12 @@ impl Scanner {
             current: 0,
             line: 1,
         }
+    }
+
+    pub(crate) fn get_token(&self, token: &Token) -> String {
+        self.source[token.start..token.start + token.length]
+            .iter()
+            .collect()
     }
 
     pub(crate) fn scan_token(&mut self) -> Token {
@@ -123,7 +130,7 @@ impl Scanner {
         self.current == self.source.len()
     }
 
-    fn advance(&mut self) -> char {
+    pub(crate) fn advance(&mut self) -> char {
         self.current += 1;
         self.source[self.current - 1]
     }
