@@ -127,7 +127,7 @@ impl Scanner {
     }
 
     fn at_end(&self) -> bool {
-        self.current == self.source.len()
+        self.current >= self.source.len()
     }
 
     pub(crate) fn advance(&mut self) -> char {
@@ -301,6 +301,9 @@ impl Scanner {
     }
 
     fn peek(&self) -> char {
+	if self.at_end() {
+	    return '\0'
+	}
         self.source[self.current]
     }
 

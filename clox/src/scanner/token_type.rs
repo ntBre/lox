@@ -1,10 +1,10 @@
 use std::fmt::Display;
 
 #[repr(u8)]
-#[derive(Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Default, Debug, Eq, PartialEq)]
 pub(crate) enum TokenType {
     // Single-character tokens.
-    LeftParen,
+    LeftParen = 0,
     RightParen,
     LeftBrace,
     RightBrace,

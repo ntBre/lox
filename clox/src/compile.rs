@@ -15,8 +15,9 @@ pub(crate) struct Parser {
 }
 
 #[repr(u8)]
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord)]
 enum Precedence {
+    #[default]
     None = 0,
     Assignment,
     Or,
@@ -53,6 +54,7 @@ impl From<u8> for Precedence {
 // this doesn't feel like it's going to work but it might
 type ParseFn = for<'a, 'b> fn(&'a mut Vm, &'b mut Scanner);
 
+#[derive(Default, Clone)]
 struct ParseRule {
     prefix: Option<ParseFn>,
     infix: Option<ParseFn>,
@@ -60,7 +62,7 @@ struct ParseRule {
 }
 
 fn load_rules() -> Vec<ParseRule> {
-    let mut rules = Vec::new();
+    let mut rules = vec![ParseRule::default(); 40];
     include!("rules");
     rules
 }
@@ -81,6 +83,8 @@ impl Vm {
         let chunk = Chunk::new();
         let mut scanner = Scanner::new(source);
 
+        self.chunk = Some(chunk);
+
         self.parser.had_error = false;
         self.parser.panic_mode = false;
 
@@ -93,7 +97,7 @@ impl Vm {
         if self.parser.had_error {
             Err(InterpretError::CompileError)
         } else {
-            Ok(chunk)
+            Ok(std::mem::take(&mut self.chunk.as_mut().unwrap()))
         }
     }
 

@@ -1,7 +1,7 @@
 #![allow(unused)]
 
-static DEBUG_TRACE_EXECUTION: bool = true;
-static DEBUG_PRINT_CODE: bool = true;
+static DEBUG_TRACE_EXECUTION: bool = false;
+static DEBUG_PRINT_CODE: bool = false;
 
 pub mod chunk;
 pub mod compile;
