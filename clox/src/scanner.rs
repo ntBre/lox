@@ -179,8 +179,9 @@ impl Scanner {
         typ: TokenType,
     ) -> TokenType {
         if self.current - self.start == start + length {
-            let s: String =
-                self.source[self.start..self.current].iter().collect();
+            let s: String = self.source[self.start + start..self.current]
+                .iter()
+                .collect();
             if s == rest {
                 return typ;
             }
@@ -301,9 +302,9 @@ impl Scanner {
     }
 
     fn peek(&self) -> char {
-	if self.at_end() {
-	    return '\0'
-	}
+        if self.at_end() {
+            return '\0';
+        }
         self.source[self.current]
     }
 

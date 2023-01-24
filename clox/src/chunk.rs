@@ -3,10 +3,17 @@ use crate::value::{Value, ValueArray};
 #[repr(u8)]
 pub enum OpCode {
     Constant,
+    Nil,
+    True,
+    False,
+    Equal,
+    Greater,
+    Less,
     Add,
     Subtract,
     Multiply,
     Divide,
+    Not,
     Negate,
     Return,
 }
@@ -24,10 +31,17 @@ impl TryInto<OpCode> for u8 {
         use OpCode::*;
         match self {
             x if x == Constant as u8 => Ok(Constant),
+            x if x == Nil as u8 => Ok(Nil),
+            x if x == True as u8 => Ok(True),
+            x if x == False as u8 => Ok(False),
+            x if x == Equal as u8 => Ok(Equal),
+            x if x == Greater as u8 => Ok(Greater),
+            x if x == Less as u8 => Ok(Less),
             x if x == Add as u8 => Ok(Add),
             x if x == Subtract as u8 => Ok(Subtract),
             x if x == Multiply as u8 => Ok(Multiply),
             x if x == Divide as u8 => Ok(Divide),
+            x if x == Not as u8 => Ok(Not),
             x if x == Negate as u8 => Ok(Negate),
             x if x == Return as u8 => Ok(Return),
             _ => Err(()),

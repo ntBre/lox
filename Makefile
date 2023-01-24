@@ -18,6 +18,8 @@ else ifeq ($(CH),11)
 	CHAPTER=chap11_resolving
 else ifeq ($(CH),17)
 	CHAPTER=chap17_compiling
+else ifeq ($(CH),18)
+	CHAPTER=chap18_types
 endif
 
 INTERPRETER = ../../Projects/lox/target/debug/jlox

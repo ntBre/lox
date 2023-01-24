@@ -21,10 +21,17 @@ impl Chunk {
             Ok(OpCode::Constant) => {
                 constant_instruction("Constant", self, offset)
             }
+            Ok(OpCode::Nil) => simple_instruction("Nil", offset),
+            Ok(OpCode::True) => simple_instruction("True", offset),
+            Ok(OpCode::False) => simple_instruction("False", offset),
+            Ok(OpCode::Equal) => simple_instruction("Equal", offset),
+            Ok(OpCode::Greater) => simple_instruction("Greater", offset),
+            Ok(OpCode::Less) => simple_instruction("Less", offset),
             Ok(OpCode::Add) => simple_instruction("Add", offset),
             Ok(OpCode::Subtract) => simple_instruction("Subtract", offset),
             Ok(OpCode::Multiply) => simple_instruction("Multiply", offset),
             Ok(OpCode::Divide) => simple_instruction("Divide", offset),
+            Ok(OpCode::Not) => simple_instruction("Not", offset),
             Ok(OpCode::Negate) => simple_instruction("Negate", offset),
             Ok(OpCode::Return) => simple_instruction("Return", offset),
             Err(_) => {

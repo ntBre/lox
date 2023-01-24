@@ -97,7 +97,7 @@ impl Vm {
         if self.parser.had_error {
             Err(InterpretError::CompileError)
         } else {
-            Ok(std::mem::take(&mut self.chunk.as_mut().unwrap()))
+            Ok(std::mem::take(self.chunk.as_mut().unwrap()))
         }
     }
 
@@ -128,12 +128,12 @@ impl Vm {
         self.error_at_current(message);
     }
 
-    fn emit_byte(&mut self, byte: u8) {
+    fn emit_byte(&mut self, byte: impl Into<u8>) {
         let line = self.parser.previous.line;
         self.current_chunk().write_chunk(byte, line);
     }
 
-    fn emit_bytes(&mut self, byte1: u8, byte2: u8) {
+    fn emit_bytes<T: Into<u8>>(&mut self, byte1: T, byte2: T) {
         self.emit_byte(byte1);
         self.emit_byte(byte2);
     }
@@ -154,10 +154,29 @@ impl Vm {
         );
 
         match operator_type {
-            TokenType::Plus => self.emit_byte(OpCode::Add as u8),
-            TokenType::Minus => self.emit_byte(OpCode::Subtract as u8),
-            TokenType::Slash => self.emit_byte(OpCode::Divide as u8),
-            TokenType::Star => self.emit_byte(OpCode::Multiply as u8),
+            TokenType::BangEqual => self.emit_bytes(OpCode::Equal, OpCode::Not),
+            TokenType::EqualEqual => self.emit_byte(OpCode::Equal),
+            TokenType::Greater => self.emit_byte(OpCode::Greater),
+            TokenType::GreaterEqual => {
+                self.emit_bytes(OpCode::Less, OpCode::Not)
+            }
+            TokenType::Less => self.emit_byte(OpCode::Less),
+            TokenType::LessEqual => {
+                self.emit_bytes(OpCode::Greater, OpCode::Not)
+            }
+            TokenType::Plus => self.emit_byte(OpCode::Add),
+            TokenType::Minus => self.emit_byte(OpCode::Subtract),
+            TokenType::Slash => self.emit_byte(OpCode::Divide),
+            TokenType::Star => self.emit_byte(OpCode::Multiply),
+            _ => unreachable!(),
+        }
+    }
+
+    fn literal(&mut self, scanner: &mut Scanner) {
+        match self.parser.previous.typ {
+            TokenType::False => self.emit_byte(OpCode::False),
+            TokenType::True => self.emit_byte(OpCode::True),
+            TokenType::Nil => self.emit_byte(OpCode::Nil),
             _ => unreachable!(),
         }
     }
@@ -176,7 +195,7 @@ impl Vm {
             .get_token(&self.parser.previous)
             .parse::<f64>()
             .unwrap();
-        self.emit_constant(value);
+        self.emit_constant(Value::number(value));
     }
 
     fn unary(&mut self, scanner: &mut Scanner) {
@@ -185,11 +204,11 @@ impl Vm {
         // compile the operand
         self.parse_precedence(Precedence::Unary, scanner);
 
-        let TokenType::Minus = operator_type else {
-	    unreachable!();
-	};
-
-        self.emit_byte(OpCode::Negate as u8);
+        match operator_type {
+            TokenType::Minus => self.emit_byte(OpCode::Negate as u8),
+            TokenType::Bang => self.emit_byte(OpCode::Not as u8),
+            _ => unreachable!(),
+        };
     }
 
     fn parse_precedence(
